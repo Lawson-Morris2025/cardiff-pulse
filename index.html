@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cardiff Pulse</title>
-<!-- Correct Supabase script for browsers -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
+<!-- ✅ Correct Supabase CDN for browser -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 <style>
 html, body { height:100%; margin:0; font-family: Arial, sans-serif; display:flex; flex-direction:column;}
 header { background:#c00; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;}
@@ -85,9 +85,9 @@ Cardiff Pulse was created in 2025 as a fast, reliable source for local news acro
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Supabase setup with your publishable key
+  // ✅ Supabase client
   const SUPABASE_URL = "https://asjgeewdjzuxiwpwsgdo.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p";
+  const SUPABASE_KEY = "sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p"; // public key
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let posts = [];
