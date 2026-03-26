@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cardiff Pulse</title>
+<!-- Correct Supabase script for browsers -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
 <style>
 html, body { height:100%; margin:0; font-family: Arial, sans-serif; display:flex; flex-direction:column;}
@@ -84,9 +85,9 @@ Cardiff Pulse was created in 2025 as a fast, reliable source for local news acro
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Supabase setup
+  // Supabase setup with your publishable key
   const SUPABASE_URL = "https://asjgeewdjzuxiwpwsgdo.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p"; // Replace with your Supabase anon key
+  const SUPABASE_KEY = "sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let posts = [];
@@ -107,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeFullBtn = document.getElementById("closeFullBtn");
   const newsContainer = document.getElementById("news-container");
 
-  // Navigation buttons
+  // Navigation
   document.querySelectorAll("nav a").forEach(a => {
     a.addEventListener("click", () => {
       document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
@@ -197,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Save / Edit post
   saveBtn.addEventListener("click", async () => {
-    const postData = { title: titleInput.value, image: imageInput.value, description: descInput.value };
+    const postData = { title:titleInput.value, image:imageInput.value, description:descInput.value };
     if (editId) {
       await supabaseClient.from('posts').update(postData).eq('id', editId);
     } else {
