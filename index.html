@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardiff Pulse</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
+<style>
+html, body { height:100%; margin:0; font-family: Arial, sans-serif; display:flex; flex-direction:column;}
+header { background:#c00; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;}
+nav a { margin-left:15px; cursor:pointer; color:white; text-decoration:none; }
+main { flex:1; padding:20px;}
+section { display:none;}
+section.active { display:block;}
+#news-container { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px;}
+.post { height:200px; position:relative; cursor:pointer; overflow:hidden; border-radius:8px;}
+.post img { width:100%; height:100%; object-fit:cover; transition: transform 0.3s; }
+.post:hover img { transform: scale(1.05); }
+.overlay { position:absolute; bottom:0; background:rgba(0,0,0,0.6); color:white; width:100%; padding:10px; font-weight:bold;}
+#fullpage { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; overflow:auto; padding:40px 20px; z-index:999;}
+#fullpage img { max-width:100%; margin-bottom:20px; }
+#admin { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; color:white; padding:40px 20px; z-index:1000; overflow:auto;}
+#admin input, #admin textarea { width:100%; margin:5px 0; padding:8px; }
+#admin button { padding:10px; margin:5px 0; cursor:pointer; }
+footer { text-align:center; padding:15px; background:#ddd; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<header>
+<h1>Cardiff Pulse</h1>
+<nav>
+  <a data-page="home">Home</a>
+  <a data-page="about">About</a>
+</nav>
+</header>
+
+<main>
+<section id="home" class="active">
+  <div id="news-container"></div>
+</section>
+
+<section id="about">
+<h2>About Cardiff Pulse</h2>
+<p>
+Cardiff Pulse was created in 2025 as a fast, reliable source for local news across Cardiff. All posts are added online and live updates coming soon with RSS and Facebook integration.
+</p>
+</section>
+</main>
+
+<!-- Full Post Popup -->
+<div id="fullpage">
+<button id="closeFullBtn">Close</button>
+<h1 id="fp-title"></h1>
+<img id="fp-image">
+<p id="fp-desc"></p>
+</div>
+
+<!-- Admin Panel -->
+<div id="admin">
+<h2>Admin</h2>
+
+<div id="login-section">
+<input type="password" id="pass" placeholder="Enter password">
+<button id="loginBtn">Login</button>
+</div>
+
+<div id="panel" style="display:none;">
+<h3>New / Edit Post</h3>
+<input id="title" placeholder="Title">
+<input id="image" placeholder="Image URL">
+<textarea id="desc" placeholder="Description"></textarea>
+<button id="saveBtn">Save</button>
+
+<h3>All Posts</h3>
+<div id="list"></div>
+
+<button id="closeAdminBtn">Close Admin</button>
+</div>
+</div>
+
+<footer id="openAdminBtn">© 2026 Cardiff Pulse</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Supabase setup
+  const SUPABASE_URL = "https://asjgeewdjzuxiwpwsgdo.supabase.co";
+  const SUPABASE_KEY = "YOUR_SERVICE_ROLE_KEY_HERE"; // Replace with service role key
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let posts = [];
+  let editId = null;
+
+  // DOM elements
+  const titleInput = document.getElementById("title");
+  const imageInput = document.getElementById("image");
+  const descInput = document.getElementById("desc");
+  const listDiv = document.getElementById("list");
+  const loginBtn = document.getElementById("loginBtn");
+  const passInput = document.getElementById("pass");
+  const panelDiv = document.getElementById("panel");
+  const saveBtn = document.getElementById("saveBtn");
+  const adminDiv = document.getElementById("admin");
+  const openAdminBtn = document.getElementById("openAdminBtn");
+  const closeAdminBtn = document.getElementById("closeAdminBtn");
+  const closeFullBtn = document.getElementById("closeFullBtn");
+  const newsContainer = document.getElementById("news-container");
+
+  // Navigation
+  document.querySelectorAll("nav a").forEach(a=>{
+    a.addEventListener("click", ()=>{
+      document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+      document.getElementById(a.dataset.page).classList.add("active");
+    });
+  });
+
+  // Footer click opens admin
+  openAdminBtn.addEventListener("click", ()=> adminDiv.style.display="block");
+  closeAdminBtn.addEventListener("click", ()=> adminDiv.style.display="none");
+
+  // Login
+  loginBtn.addEventListener("click", ()=>{
+    if(passInput.value==="Meego2025!"){
+      document.getElementById("login-section").style.display="none";
+      panelDiv.style.display="block";
+      loadPosts();
+    } else { alert("Wrong password"); }
+  });
+
+  // Full post popup
+  function openFull(p){
+    document.getElementById("fp-title").innerText = p.title;
+    document.getElementById("fp-image").src = p.image;
+    document.getElementById("fp-desc").innerText = p.description;
+    document.getElementById("fullpage").style.display = "block";
+  }
+  closeFullBtn.addEventListener("click", ()=> document.getElementById("fullpage").style.display="none");
+
+  // Load posts from Supabase
+  async function loadPosts() {
+    const { data, error } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    posts = data || [];
+    renderHome();
+    renderAdmin();
+  }
+
+  // Save / Edit
+  saveBtn.addEventListener("click", async ()=>{
+    const postData = { title:titleInput.value, image:imageInput.value, description:descInput.value };
+    if(editId){
+      await supabaseClient.from('posts').update(postData).eq('id', editId);
+    } else {
+      await supabaseClient.from('posts').insert(postData);
+    }
+    titleInput.value=""; imageInput.value=""; descInput.value=""; editId=null;
+    loadPosts();
+  });
+
+  // Render posts
+  function renderHome(){
+    newsContainer.innerHTML="";
+    posts.forEach(p=>{
+      const div = document.createElement("div");
+      div.className="post";
+      div.innerHTML = `<img src="${p.image}"><div class="overlay">${p.title}</div>`;
+      div.addEventListener("click", ()=> openFull(p));
+      newsContainer.appendChild(div);
+    });
+  }
+
+  // Admin post list
+  function renderAdmin(){
+    listDiv.innerHTML="";
+    posts.forEach(p=>{
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${p.title}</strong> `;
+      
+      const editBtn = document.createElement("button");
+      editBtn.textContent="Edit";
+      editBtn.addEventListener("click", ()=>{
+        titleInput.value=p.title;
+        imageInput.value=p.image;
+        descInput.value=p.description;
+        editId=p.id;
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent="Delete";
+      delBtn.addEventListener("click", async ()=>{
+        if(confirm("Delete this post?")){
+          await supabaseClient.from('posts').delete().eq('id', p.id);
+          loadPosts();
+        }
+      });
+
+      div.appendChild(editBtn);
+      div.appendChild(delBtn);
+      listDiv.appendChild(div);
+    });
+  }
+
+});
+</script>
+
+</body>
+</html>
