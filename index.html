@@ -28,6 +28,18 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Black', 'Arial', sans-serif; }
         body { background-color: var(--bg-gray); color: var(--text-main); line-height: 1.2; }
 
+        /* Admin Badge */
+        #staff-badge {
+            display: none;
+            background: #000;
+            color: #00ff00;
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 4px;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
         /* Header & Navigation */
         header {
             background-color: var(--sun-red);
@@ -175,7 +187,9 @@
             color: var(--sun-black); 
             text-transform: uppercase;
             border-bottom: 8px solid var(--sun-red);
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding-bottom: 5px;
             letter-spacing: -1px;
         }
@@ -202,6 +216,7 @@
             flex-direction: column;
             border-bottom: 1px solid #eee;
             padding-bottom: 25px;
+            position: relative;
         }
 
         .post-card:hover h3 { color: var(--sun-red); text-decoration: underline; }
@@ -232,17 +247,65 @@
             line-height: 1.4;
         }
 
-        /* Modal */
+        /* Admin controls */
+        .admin-only { display: none !important; }
+        .btn-admin { 
+            background: var(--sun-black); 
+            color: white; 
+            border: none; 
+            padding: 8px 15px; 
+            font-size: 0.8rem; 
+            cursor: pointer; 
+            text-transform: uppercase;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--sun-red);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 5;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal & Forms */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
         .modal-content { background: var(--white); max-width: 900px; margin: 0 auto; min-height: 100vh; position: relative; }
         .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--sun-red); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; z-index: 10; border: none; }
         .modal-body { padding: 2rem; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.8rem; text-transform: uppercase; }
+        .form-group input, .form-group textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            font-family: 'Arial', sans-serif; 
+            font-size: 1rem;
+        }
+        .form-group textarea { height: 200px; resize: vertical; }
+
         .modal-time-stamp { color: var(--sun-red); font-weight: 900; font-size: 1rem; margin-bottom: 1rem; display: block; text-transform: uppercase; border-left: 4px solid var(--sun-red); padding-left: 10px; }
         .modal-body h2 { font-size: 3.5rem; margin-bottom: 1.5rem; color: #000; line-height: 1; letter-spacing: -2px; }
         .modal-text { font-family: 'Georgia', serif; font-size: 1.3rem; line-height: 1.6; color: #111; white-space: pre-wrap; }
 
         footer { background: #111; color: #888; padding: 4rem 5%; text-align: center; font-family: 'Arial', sans-serif; font-size: 0.8rem; border-top: 10px solid var(--sun-red); }
-        .admin-link { text-decoration: underline; cursor: pointer; color: #555; }
+        .admin-link { 
+            text-decoration: underline; 
+            cursor: pointer; 
+            color: #555; 
+            padding: 15px; 
+            display: inline-block;
+            transition: color 0.2s;
+        }
+        .admin-link:hover { color: var(--sun-red); }
 
         @media (max-width: 600px) {
             .logo-text { font-size: 2.2rem; letter-spacing: -1px; }
@@ -252,6 +315,8 @@
     </style>
 </head>
 <body>
+
+    <div id="staff-badge">STAFF MODE ACTIVE (CARDIFF PULSE CMS)</div>
 
     <header>
         <div class="header-top">
@@ -281,7 +346,10 @@
     <main>
         <!-- NEWS PAGE -->
         <section id="news-section" class="active">
-            <h2 class="hero-title">Top Stories</h2>
+            <div class="hero-title">
+                <span>Top Stories</span>
+                <button class="btn-admin admin-only" onclick="openAdminModal()">+ Post News</button>
+            </div>
             <div id="loading-state" style="text-align:center; padding: 4rem; font-weight: bold; color: #999;">FETCHING LATEST HEADLINES...</div>
             <div id="posts-grid"></div>
         </section>
@@ -297,10 +365,11 @@
         </section>
     </main>
 
+    <!-- CONTENT VIEW MODAL -->
     <div id="post-modal" class="modal">
         <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()">✕</button>
-            <img id="modal-img" style="width:100%; height:500px; object-fit:cover;">
+            <button class="modal-close" onclick="closeModal('post-modal')">✕</button>
+            <img id="modal-img" style="width:100%; height:500px; object-fit:cover;" onerror="this.src='logo.png'">
             <div class="modal-body">
                 <span id="modal-time" class="modal-time-stamp"></span>
                 <h2 id="modal-title"></h2>
@@ -309,9 +378,33 @@
         </div>
     </div>
 
+    <!-- ADMIN POST MODAL -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('admin-modal')">✕</button>
+            <div class="modal-body">
+                <h2 style="font-size: 2rem;">Publish News</h2>
+                <div class="form-group">
+                    <label>Headline</label>
+                    <input type="text" id="post-title" placeholder="Enter bold headline...">
+                </div>
+                <div class="form-group">
+                    <label>Image URL (Optional)</label>
+                    <input type="text" id="post-image" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Article Content</label>
+                    <textarea id="post-description" placeholder="Write the full story..."></textarea>
+                </div>
+                <button class="btn-admin" style="width: 100%; padding: 15px; font-size: 1rem;" onclick="submitPost()">Publish to Cardiff Pulse</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div style="margin-bottom: 20px; font-weight: 900; font-size: 1.8rem; color: #fff;">CARDIFF PULSE</div>
-        <p>&copy; 2025 Cardiff Pulse Media Group. <span class="admin-link">Staff Access</span></p>
+        <p>&copy; 2025 Cardiff Pulse Media Group.</p>
+        <span class="admin-link" id="staff-access-btn">Staff Access</span>
     </footer>
 
     <script>
@@ -320,6 +413,7 @@
 
         let supabase;
         let newsData = [];
+        let isStaff = false;
 
         async function fetchWeather() {
             try {
@@ -349,10 +443,29 @@
 
         async function init() {
             fetchWeather();
+            
+            // Setup click listener for the Staff Access button
+            const btn = document.getElementById('staff-access-btn');
+            if (btn) {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    toggleStaffAccess();
+                };
+            }
+
+            // Keyboard shortcut listener
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                    toggleStaffAccess();
+                }
+            });
+
+            // Initialize Supabase
             const lib = window.supabase;
-            if (!lib) return;
-            supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
-            await fetchNews();
+            if (lib) {
+                supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
+                await fetchNews();
+            }
         }
 
         async function fetchNews() {
@@ -366,14 +479,21 @@
 
         function renderUI() {
             const grid = document.getElementById('posts-grid');
+            if (!grid) return;
             grid.innerHTML = '';
 
             newsData.forEach((post) => {
+                const displayImg = (post.image_url && post.image_url.trim() !== "") ? post.image_url : 'logo.png';
+                
                 const card = document.createElement('div');
                 card.className = 'post-card';
+                
+                let deleteHTML = isStaff ? `<button class="delete-btn" onclick="event.stopPropagation(); deletePost('${post.id}')" title="Delete Post">✕</button>` : '';
+                
                 card.onclick = () => openModal(post);
                 card.innerHTML = `
-                    <img src="${post.image_url || 'logo.png'}" onerror="this.src='https://images.unsplash.com/photo-1585433600938-29479b326090?w=800'">
+                    ${deleteHTML}
+                    <img src="${displayImg}" onerror="this.src='logo.png'">
                     <div class="post-content">
                         <span class="post-meta">${formatDate(post.created_at)}</span>
                         <h3>${post.title}</h3>
@@ -383,29 +503,88 @@
             });
         }
 
+        async function submitPost() {
+            const title = document.getElementById('post-title').value;
+            const description = document.getElementById('post-description').value;
+            const image_url = document.getElementById('post-image').value;
+
+            if (!title || !description) {
+                alert('Headline and Content are required.');
+                return;
+            }
+
+            const { error } = await supabase.from('posts').insert([{ title, description, image_url }]);
+            if (error) {
+                alert('Database Error: ' + error.message);
+            } else {
+                closeModal('admin-modal');
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-description').value = '';
+                document.getElementById('post-image').value = '';
+                fetchNews();
+            }
+        }
+
+        async function deletePost(id) {
+            if (!confirm('Are you sure you want to delete this story?')) return;
+            const { error } = await supabase.from('posts').delete().eq('id', id);
+            if (!error) fetchNews();
+            else alert("Delete Error: " + error.message);
+        }
+
+        function toggleStaffAccess() {
+            const pin = prompt("STAFF ENTRANCE\nEnter Security Passkey:");
+            if (pin === "cardiff2025") {
+                isStaff = true;
+                
+                // Toggle UI elements
+                document.getElementById('staff-badge').style.display = 'block';
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.setProperty('display', 'block', 'important');
+                });
+                
+                renderUI();
+                console.log("Staff mode enabled");
+            } else if (pin !== null) {
+                alert("Access Denied: Invalid Passkey.");
+            }
+        }
+
         function openModal(post) {
+            const displayImg = (post.image_url && post.image_url.trim() !== "") ? post.image_url : 'logo.png';
             document.getElementById('modal-time').innerText = formatDate(post.created_at);
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
-            document.getElementById('modal-img').src = post.image_url || 'https://images.unsplash.com/photo-1585433600938-29479b326090?w=800';
+            document.getElementById('modal-img').src = displayImg;
             document.getElementById('post-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
 
-        function closeModal() { 
-            document.getElementById('post-modal').style.display = 'none'; 
+        function openAdminModal() {
+            document.getElementById('admin-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'none'; 
             document.body.style.overflow = 'auto';
         }
 
         function navigateTo(page) {
             document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-strip span').forEach(n => n.classList.remove('active'));
-            document.getElementById(`${page}-section`).classList.add('active');
-            document.getElementById(`nav-${page}`).classList.add('active');
+            
+            const section = document.getElementById(`${page}-section`);
+            const nav = document.getElementById(`nav-${page}`);
+            
+            if (section) section.classList.add('active');
+            if (nav) nav.classList.add('active');
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        init();
+        window.onload = init;
     </script>
 </body>
 </html>
