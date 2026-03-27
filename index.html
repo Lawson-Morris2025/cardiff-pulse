@@ -12,6 +12,7 @@
             --dark-red: #b71c1c;
             --bg-gray: #f0f2f5;
             --text-main: #1c1e21;
+            --text-secondary: #65676b;
             --white: #ffffff;
             --shadow: 0 4px 12px rgba(0,0,0,0.1);
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -36,7 +37,6 @@
         .logo { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
         .live-status { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; }
         .dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: pulse 1.5s infinite; }
-        .dot.error { background: #ff5252; animation: none; }
         
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -78,11 +78,11 @@
 
         .post-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
         .post-card img { width: 100%; height: 210px; object-fit: cover; background: #e1e4e8; transition: var(--transition); }
-        .post-card:hover img { transform: scale(1.05); }
         
         .post-content { padding: 1.5rem; flex-grow: 1; }
+        .post-meta { font-size: 0.75rem; color: var(--cardiff-red); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
         .post-content h3 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #000; line-height: 1.3; }
-        .post-content p { color: #65676b; font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .post-content p { color: var(--text-secondary); font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; overflow-y: auto; backdrop-filter: blur(4px); }
         .modal-content { background: var(--white); max-width: 800px; margin: 2rem auto; border-radius: 16px; position: relative; overflow: hidden; animation: slideUp 0.3s ease-out; }
@@ -90,6 +90,7 @@
         
         .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--white); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .modal-body { padding: 2.5rem; }
+        .modal-time-stamp { color: var(--cardiff-red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; display: block; }
         .modal-body h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #000; }
         .modal-text { font-size: 1.1rem; line-height: 1.8; color: #333; white-space: pre-wrap; }
 
@@ -102,7 +103,6 @@
         
         button { padding: 1rem 2rem; background: var(--cardiff-red); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: var(--transition); }
         button:hover { background: var(--dark-red); }
-        button:disabled { background: #ccc; cursor: not-allowed; }
         button.cancel { background: #e4e6eb; color: #050505; margin-left: 10px; }
 
         .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 0.8rem; border: 1px solid #eee; }
@@ -136,6 +136,7 @@
             <div class="modal-close" onclick="closeModal()">✕</div>
             <img id="modal-img" style="width:100%; height:400px; object-fit:cover;">
             <div class="modal-body">
+                <span id="modal-time" class="modal-time-stamp"></span>
                 <h2 id="modal-title"></h2>
                 <div id="modal-desc" class="modal-text"></div>
             </div>
@@ -153,6 +154,10 @@
                 <div class="input-group">
                     <label>Headline</label>
                     <input type="text" id="post-title" required placeholder="Enter headline...">
+                </div>
+                <div class="input-group">
+                    <label>Aired Date & Time</label>
+                    <input type="datetime-local" id="post-aired-at" required>
                 </div>
                 <div class="input-group">
                     <label>Image URL (Optional)</label>
@@ -185,7 +190,7 @@
         const SUPABASE_URL = 'https://asjgeewdjzuxiwpwsgdo.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p';
         const ADMIN_PASS = 'Meego2025!';
-        const DEFAULT_IMAGE = 'logo.png'; // Define the default image path
+        const DEFAULT_IMAGE = 'logo.png'; 
 
         let supabase;
         let newsData = [];
@@ -201,68 +206,63 @@
             console.error("News Pulse Error:", msg);
         }
 
+        // Helper to format date into a nice string
+        function formatAiredTime(dateString) {
+            if (!dateString) return "Recent";
+            const date = new Date(dateString);
+            return date.toLocaleString('en-GB', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
         async function init() {
             const lib = window.supabase;
             if (!lib || typeof lib.createClient !== 'function') {
-                logError("Database library (Supabase) failed to initialize correctly. Please refresh the page.");
+                logError("Database library failed to initialize.");
                 return;
             }
 
             try {
                 supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
-                const channel = supabase.channel('news_pulse');
-                channel
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload) => {
-                        fetchNews();
-                    })
-                    .subscribe();
-
+                supabase.channel('news_pulse').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchNews).subscribe();
                 await fetchNews();
-                const form = document.getElementById('post-form');
-                if (form) form.onsubmit = handleNewsSubmission;
-
+                document.getElementById('post-form').onsubmit = handleNewsSubmission;
             } catch (e) {
-                logError("Failed to connect: " + e.message);
+                logError(e.message);
             }
         }
 
         async function fetchNews() {
             if (!supabase) return;
             try {
-                const { data, error } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    logError(error.message);
-                } else {
-                    newsData = data || [];
-                    renderUI();
-                    const loader = document.getElementById('loading-state');
-                    if (loader) loader.style.display = 'none';
-                }
+                const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                newsData = data || [];
+                renderUI();
+                document.getElementById('loading-state').style.display = 'none';
             } catch (err) {
-                logError("Fetch failed: " + err.message);
+                logError(err.message);
             }
         }
 
         function renderUI() {
             const grid = document.getElementById('posts-grid');
             const adminList = document.getElementById('admin-list');
-            if (!grid || !adminList) return;
-
             grid.innerHTML = '';
             adminList.innerHTML = '';
 
             if (newsData.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; width:100%; grid-column:1/-1; padding: 2rem;">No news articles found. Add some in the Admin panel.</p>';
+                grid.innerHTML = '<p style="text-align:center; width:100%; grid-column:1/-1; padding: 2rem;">No news articles found.</p>';
                 return;
             }
 
             newsData.forEach(post => {
-                // Use default image if URL is missing or empty string
                 const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
+                const timeLabel = formatAiredTime(post.aired_at);
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
@@ -270,6 +270,7 @@
                 card.innerHTML = `
                     <img src="${displayImage}" alt="News Image" onerror="this.src='${DEFAULT_IMAGE}'">
                     <div class="post-content">
+                        <span class="post-meta">${timeLabel}</span>
                         <h3>${post.title}</h3>
                         <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
                     </div>`;
@@ -278,8 +279,8 @@
                 const row = document.createElement('div');
                 row.className = 'admin-row';
                 row.innerHTML = `
-                    <span style="flex-grow:1; margin-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${post.title}</span> 
-                    <div style="display:flex; gap:5px;">
+                    <span style="flex-grow:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</span> 
+                    <div style="display:flex; gap:5px; flex-shrink:0;">
                         <button onclick="editPost('${post.id}')" style="padding: 5px 10px;">Edit</button>
                         <button onclick="deletePost('${post.id}')" style="padding: 5px 10px; background: #666;">Delete</button>
                     </div>`;
@@ -292,6 +293,7 @@
             const editId = document.getElementById('edit-id').value;
             const postObj = {
                 title: document.getElementById('post-title').value,
+                aired_at: document.getElementById('post-aired-at').value,
                 image_url: document.getElementById('post-image').value,
                 description: document.getElementById('post-desc').value
             };
@@ -300,19 +302,13 @@
                 ? await supabase.from('posts').update(postObj).eq('id', editId)
                 : await supabase.from('posts').insert([postObj]);
 
-            if (error) {
-                alert("Error saving: " + error.message);
-            } else { 
-                resetForm(); 
-                fetchNews(); 
-                if(editId) hideAdmin(); 
-            }
+            if (error) alert("Error saving: " + error.message);
+            else { resetForm(); fetchNews(); if(editId) hideAdmin(); }
         }
 
         async function deletePost(id) {
-            if (confirm("Delete this story forever?")) {
-                const { error } = await supabase.from('posts').delete().eq('id', id);
-                if (error) alert(error.message);
+            if (confirm("Delete this story?")) {
+                await supabase.from('posts').delete().eq('id', id);
                 fetchNews();
             }
         }
@@ -322,62 +318,60 @@
             if (!post) return;
             document.getElementById('edit-id').value = post.id;
             document.getElementById('post-title').value = post.title;
-            document.getElementById('post-image').value = post.image_url;
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            if (post.aired_at) {
+                const d = new Date(post.aired_at);
+                const isoStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('post-aired-at').value = isoStr;
+            }
+            
+            document.getElementById('post-image').value = post.image_url || '';
             document.getElementById('post-desc').value = post.description;
             document.getElementById('submit-btn').innerText = "Update News Story";
         }
 
         function resetForm() { 
-            const form = document.getElementById('post-form');
-            if (form) form.reset(); 
+            document.getElementById('post-form').reset(); 
             document.getElementById('edit-id').value = ''; 
             document.getElementById('submit-btn').innerText = "Post News Story";
+            // Default aired time to now
+            const now = new Date();
+            const isoStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('post-aired-at').value = isoStr;
         }
 
         function openModal(post) {
             const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
-            
+            document.getElementById('modal-time').innerText = formatAiredTime(post.aired_at);
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
             const modalImg = document.getElementById('modal-img');
             modalImg.src = displayImage;
             modalImg.onerror = function() { this.src = DEFAULT_IMAGE; };
-            
             document.getElementById('post-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
 
-        function closeModal() { 
-            document.getElementById('post-modal').style.display = 'none'; 
-            document.body.style.overflow = 'auto';
+        function closeModal() { document.getElementById('post-modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        function showLogin() { 
+            resetForm();
+            document.getElementById('login-overlay').style.display = 'flex'; 
         }
-
-        function showLogin() { document.getElementById('login-overlay').style.display = 'flex'; }
         function hideLogin() { document.getElementById('login-overlay').style.display = 'none'; }
         
         function checkAdminAuth() {
             if (document.getElementById('admin-pass').value === ADMIN_PASS) {
                 hideLogin(); 
                 document.getElementById('admin-view').style.display = 'block';
-            } else {
-                alert("Incorrect password.");
-            }
+            } else alert("Incorrect password.");
         }
 
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
 
         window.onload = () => {
-            let retryCount = 0;
-            const maxRetries = 50; 
-            const timer = setInterval(() => {
-                retryCount++;
-                if (window.supabase && typeof window.supabase.createClient === 'function') {
-                    clearInterval(timer);
-                    init();
-                } else if (retryCount >= maxRetries) {
-                    clearInterval(timer);
-                    logError("Supabase initialization timed out.");
-                }
+            let timer = setInterval(() => {
+                if (window.supabase) { clearInterval(timer); init(); }
             }, 100);
         };
     </script>
