@@ -80,7 +80,8 @@
         .post-card img { width: 100%; height: 210px; object-fit: cover; background: #e1e4e8; transition: var(--transition); }
         
         .post-content { padding: 1.5rem; flex-grow: 1; }
-        .post-meta { font-size: 0.75rem; color: var(--cardiff-red); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
+        .post-meta { font-size: 0.75rem; color: var(--cardiff-red); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
+        .post-author { font-size: 0.7rem; color: #888; margin-bottom: 0.75rem; display: block; font-style: italic; }
         .post-content h3 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #000; line-height: 1.3; }
         .post-content p { color: var(--text-secondary); font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
@@ -90,8 +91,9 @@
         
         .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--white); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .modal-body { padding: 2.5rem; }
-        .modal-time-stamp { color: var(--cardiff-red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; display: block; }
-        .modal-body h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #000; }
+        .modal-time-stamp { color: var(--cardiff-red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; display: block; }
+        .modal-author { color: #666; font-size: 0.85rem; margin-bottom: 1.5rem; display: block; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+        .modal-body h2 { font-size: 2rem; margin-bottom: 1rem; color: #000; }
         .modal-text { font-size: 1.1rem; line-height: 1.8; color: #333; white-space: pre-wrap; }
 
         #admin-view { display: none; position: fixed; inset: 0; background: var(--white); z-index: 3000; overflow-y: auto; padding: 3rem 5%; }
@@ -137,6 +139,7 @@
             <img id="modal-img" style="width:100%; height:400px; object-fit:cover;">
             <div class="modal-body">
                 <span id="modal-time" class="modal-time-stamp"></span>
+                <span id="modal-author" class="modal-author"></span>
                 <h2 id="modal-title"></h2>
                 <div id="modal-desc" class="modal-text"></div>
             </div>
@@ -155,9 +158,19 @@
                     <label>Headline</label>
                     <input type="text" id="post-title" required placeholder="Enter headline...">
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label>Date (e.g. 24 Oct 2025)</label>
+                        <input type="text" id="post-date" placeholder="Today" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Time (e.g. 10:30 AM)</label>
+                        <input type="text" id="post-time" placeholder="Now" required>
+                    </div>
+                </div>
                 <div class="input-group">
-                    <label>Aired Date & Time</label>
-                    <input type="datetime-local" id="post-aired-at" required>
+                    <label>Reporter Name</label>
+                    <input type="text" id="post-author" placeholder="Enter your name...">
                 </div>
                 <div class="input-group">
                     <label>Image URL (Optional)</label>
@@ -206,19 +219,6 @@
             console.error("News Pulse Error:", msg);
         }
 
-        // Helper to format date into a nice string
-        function formatAiredTime(dateString) {
-            if (!dateString) return "Recent";
-            const date = new Date(dateString);
-            return date.toLocaleString('en-GB', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        }
-
         async function init() {
             const lib = window.supabase;
             if (!lib || typeof lib.createClient !== 'function') {
@@ -262,7 +262,9 @@
 
             newsData.forEach(post => {
                 const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
-                const timeLabel = formatAiredTime(post.aired_at);
+                const dateLabel = post.aired_date || 'Today';
+                const timeLabel = post.aired_time || 'Recent';
+                const authorLabel = post.author_name ? `By ${post.author_name}` : '';
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
@@ -270,7 +272,8 @@
                 card.innerHTML = `
                     <img src="${displayImage}" alt="News Image" onerror="this.src='${DEFAULT_IMAGE}'">
                     <div class="post-content">
-                        <span class="post-meta">${timeLabel}</span>
+                        <span class="post-meta">${dateLabel} • ${timeLabel}</span>
+                        ${authorLabel ? `<span class="post-author">${authorLabel}</span>` : ''}
                         <h3>${post.title}</h3>
                         <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
                     </div>`;
@@ -293,7 +296,9 @@
             const editId = document.getElementById('edit-id').value;
             const postObj = {
                 title: document.getElementById('post-title').value,
-                aired_at: document.getElementById('post-aired-at').value,
+                aired_date: document.getElementById('post-date').value,
+                aired_time: document.getElementById('post-time').value,
+                author_name: document.getElementById('post-author').value,
                 image_url: document.getElementById('post-image').value,
                 description: document.getElementById('post-desc').value
             };
@@ -318,14 +323,9 @@
             if (!post) return;
             document.getElementById('edit-id').value = post.id;
             document.getElementById('post-title').value = post.title;
-            
-            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
-            if (post.aired_at) {
-                const d = new Date(post.aired_at);
-                const isoStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                document.getElementById('post-aired-at').value = isoStr;
-            }
-            
+            document.getElementById('post-date').value = post.aired_date || '';
+            document.getElementById('post-time').value = post.aired_time || '';
+            document.getElementById('post-author').value = post.author_name || '';
             document.getElementById('post-image').value = post.image_url || '';
             document.getElementById('post-desc').value = post.description;
             document.getElementById('submit-btn').innerText = "Update News Story";
@@ -335,15 +335,17 @@
             document.getElementById('post-form').reset(); 
             document.getElementById('edit-id').value = ''; 
             document.getElementById('submit-btn').innerText = "Post News Story";
-            // Default aired time to now
+            
+            // Set some defaults
             const now = new Date();
-            const isoStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            document.getElementById('post-aired-at').value = isoStr;
+            document.getElementById('post-date').value = now.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+            document.getElementById('post-time').value = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
         }
 
         function openModal(post) {
             const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
-            document.getElementById('modal-time').innerText = formatAiredTime(post.aired_at);
+            document.getElementById('modal-time').innerText = `${post.aired_date || 'Today'} • ${post.aired_time || 'Recent'}`;
+            document.getElementById('modal-author').innerText = post.author_name ? `Story by ${post.author_name}` : '';
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
             const modalImg = document.getElementById('modal-img');
@@ -354,6 +356,7 @@
         }
 
         function closeModal() { document.getElementById('post-modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        
         function showLogin() { 
             resetForm();
             document.getElementById('login-overlay').style.display = 'flex'; 
