@@ -48,19 +48,6 @@
             gap: 24px;
         }
 
-        #debug-log { 
-            display: none; 
-            background: #fff3f3; 
-            color: #d32f2f; 
-            padding: 1.5rem; 
-            border-radius: 8px; 
-            margin-bottom: 2rem; 
-            border: 2px solid #ffcdd2;
-            font-family: monospace;
-            font-size: 0.9rem;
-            white-space: pre-wrap;
-        }
-
         .post-card {
             background: var(--white);
             border-radius: 12px;
@@ -85,6 +72,7 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; overflow-y: auto; backdrop-filter: blur(4px); }
         .modal-content { background: var(--white); max-width: 800px; margin: 2rem auto; border-radius: 16px; position: relative; overflow: hidden; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--white); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .modal-body { padding: 2.5rem; }
@@ -97,6 +85,7 @@
         .input-group { margin-bottom: 1.5rem; }
         .input-group label { display: block; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; }
         .input-group input, .input-group textarea { width: 100%; padding: 1rem; border: 2px solid #e1e4e8; border-radius: 8px; font-size: 1rem; outline: none; }
+        .input-group input:focus, .input-group textarea:focus { border-color: var(--cardiff-red); }
         
         button { padding: 1rem 2rem; background: var(--cardiff-red); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: var(--transition); }
         button:hover { background: var(--dark-red); }
@@ -120,8 +109,7 @@
 
     <main>
         <h2 class="hero-title">Live Cardiff Headlines</h2>
-        <div id="debug-log"></div>
-        <div id="loading-state" style="text-align:center; padding: 4rem;">Connecting to news database...</div>
+        <div id="loading-state" style="text-align:center; padding: 4rem; color: #888;">Connecting to database...</div>
         <div id="posts-grid"></div>
     </main>
 
@@ -147,47 +135,37 @@
                 <input type="hidden" id="edit-id">
                 <div class="input-group">
                     <label>Headline</label>
-                    <input type="text" id="post-title" required>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="input-group">
-                        <label>Date (e.g. 24 Oct 2025)</label>
-                        <input type="text" id="post-date" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Time (e.g. 10:30 AM)</label>
-                        <input type="text" id="post-time" required>
-                    </div>
+                    <input type="text" id="post-title" required placeholder="Enter the breaking news headline...">
                 </div>
                 <div class="input-group">
                     <label>Story by (Reporter Name)</label>
-                    <input type="text" id="post-author" placeholder="John Doe">
+                    <input type="text" id="post-author" placeholder="e.g. John Smith">
                 </div>
                 <div class="input-group">
                     <label>Image URL</label>
-                    <input type="url" id="post-image">
+                    <input type="url" id="post-image" placeholder="https://...">
                 </div>
                 <div class="input-group">
                     <label>Story Content</label>
-                    <textarea id="post-desc" rows="10" required></textarea>
+                    <textarea id="post-desc" rows="10" required placeholder="Write the full story here..."></textarea>
                 </div>
-                <button type="submit" id="submit-btn" style="width:100%;">Post News Story</button>
+                <button type="submit" id="submit-btn" style="width:100%;">Publish News Story</button>
             </form>
-            <div id="admin-list" style="margin-top:20px;"></div>
+            <div id="admin-list" style="margin-top:2rem; border-top: 1px solid #eee; padding-top: 2rem;"></div>
         </div>
     </div>
 
     <div id="login-overlay">
         <div class="login-box">
             <h2>Admin Login</h2>
-            <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding: 1rem; margin: 1.5rem 0;">
+            <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding: 1rem; margin: 1.5rem 0; border: 1px solid #ddd; border-radius: 8px;">
             <button onclick="checkAdminAuth()" style="width:100%;">Login</button>
             <button onclick="hideLogin()" class="cancel" style="width:100%; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2025 Cardiff Pulse. <span class="admin-link" onclick="showLogin()">Admin</span></p>
+        <p>&copy; 2025 Cardiff Pulse. <span class="admin-link" onclick="showLogin()">Admin Dashboard</span></p>
     </footer>
 
     <script>
@@ -198,6 +176,18 @@
 
         let supabase;
         let newsData = [];
+
+        function formatDate(isoString) {
+            if (!isoString) return "Just now";
+            const date = new Date(isoString);
+            return date.toLocaleString('en-GB', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
 
         async function init() {
             const lib = window.supabase;
@@ -223,9 +213,7 @@
 
             newsData.forEach(post => {
                 const displayImage = post.image_url || DEFAULT_IMAGE;
-                
-                // We use time_label if it exists, otherwise use what we have
-                const timestamp = post.time_label || 'Recent';
+                const dateLabel = formatDate(post.created_at);
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
@@ -233,7 +221,7 @@
                 card.innerHTML = `
                     <img src="${displayImage}" onerror="this.src='${DEFAULT_IMAGE}'">
                     <div class="post-content">
-                        <span class="post-meta">${timestamp}</span>
+                        <span class="post-meta">${dateLabel}</span>
                         <h3>${post.title}</h3>
                         <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
                     </div>`;
@@ -242,8 +230,8 @@
                 const row = document.createElement('div');
                 row.className = 'admin-row';
                 row.innerHTML = `<span>${post.title}</span> <div>
-                    <button onclick="editPost('${post.id}')" style="padding:5px;">Edit</button>
-                    <button onclick="deletePost('${post.id}')" style="padding:5px; background:#666;">Del</button>
+                    <button onclick="editPost('${post.id}')" style="padding:5px 10px; font-size: 0.8rem;">Edit</button>
+                    <button onclick="deletePost('${post.id}')" style="padding:5px 10px; font-size: 0.8rem; background:#666;">Del</button>
                 </div>`;
                 adminList.appendChild(row);
             });
@@ -252,19 +240,14 @@
         async function handleNewsSubmission(e) {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
-            
-            const date = document.getElementById('post-date').value;
-            const time = document.getElementById('post-time').value;
             const author = document.getElementById('post-author').value;
-            const baseDesc = document.getElementById('post-desc').value;
+            const content = document.getElementById('post-desc').value;
 
-            // COMBINED FALLBACK: We put Date/Time/Author into the time_label 
-            // and description so it works even without database changes
+            // We combine the author into the description as a fallback
             const postObj = {
                 title: document.getElementById('post-title').value,
                 image_url: document.getElementById('post-image').value,
-                time_label: `${date} • ${time}`,
-                description: author ? `STORY BY: ${author}\n\n${baseDesc}` : baseDesc
+                description: author ? `STORY BY: ${author}\n\n${content}` : content
             };
 
             const { error } = editId 
@@ -276,7 +259,10 @@
         }
 
         async function deletePost(id) {
-            if (confirm("Delete?")) { await supabase.from('posts').delete().eq('id', id); fetchNews(); }
+            if (confirm("Permanently delete this story?")) { 
+                await supabase.from('posts').delete().eq('id', id); 
+                fetchNews(); 
+            }
         }
 
         function editPost(id) {
@@ -285,34 +271,50 @@
             document.getElementById('edit-id').value = post.id;
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-image').value = post.image_url || '';
-            document.getElementById('post-desc').value = post.description || '';
-            document.getElementById('submit-btn').innerText = "Update";
+            
+            // Clean author tag if present for the editor
+            let desc = post.description || '';
+            if (desc.startsWith("STORY BY: ")) {
+                const parts = desc.split("\n\n");
+                document.getElementById('post-author').value = parts[0].replace("STORY BY: ", "");
+                document.getElementById('post-desc').value = parts.slice(1).join("\n\n");
+            } else {
+                document.getElementById('post-author').value = '';
+                document.getElementById('post-desc').value = desc;
+            }
+            
+            document.getElementById('submit-btn').innerText = "Update Story";
         }
 
         function resetForm() {
             document.getElementById('post-form').reset();
             document.getElementById('edit-id').value = '';
-            const now = new Date();
-            document.getElementById('post-date').value = now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
-            document.getElementById('post-time').value = now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('submit-btn').innerText = "Publish News Story";
         }
 
         function openModal(post) {
-            document.getElementById('modal-time').innerText = post.time_label || 'Recent';
+            document.getElementById('modal-time').innerText = formatDate(post.created_at);
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
             document.getElementById('modal-img').src = post.image_url || DEFAULT_IMAGE;
             document.getElementById('post-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
 
-        function closeModal() { document.getElementById('post-modal').style.display = 'none'; }
+        function closeModal() { 
+            document.getElementById('post-modal').style.display = 'none'; 
+            document.body.style.overflow = 'auto';
+        }
+        
         function showLogin() { document.getElementById('login-overlay').style.display = 'flex'; }
         function hideLogin() { document.getElementById('login-overlay').style.display = 'none'; }
+        
         function checkAdminAuth() {
             if (document.getElementById('admin-pass').value === ADMIN_PASS) {
                 hideLogin(); document.getElementById('admin-view').style.display = 'block'; resetForm();
             } else alert("Wrong password");
         }
+        
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
 
         window.onload = () => { setTimeout(init, 500); };
