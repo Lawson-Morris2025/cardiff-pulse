@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cardiff Pulse | Real-time City News</title>
-    <!-- Use a specific version and include crossorigin to fix 'Script error' masking -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js" crossorigin="anonymous"></script>
     <style>
         :root {
@@ -81,18 +80,15 @@
         
         .post-content { padding: 1.5rem; flex-grow: 1; }
         .post-meta { font-size: 0.75rem; color: var(--cardiff-red); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
-        .post-author { font-size: 0.7rem; color: #888; margin-bottom: 0.75rem; display: block; font-style: italic; }
         .post-content h3 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #000; line-height: 1.3; }
         .post-content p { color: var(--text-secondary); font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; overflow-y: auto; backdrop-filter: blur(4px); }
         .modal-content { background: var(--white); max-width: 800px; margin: 2rem auto; border-radius: 16px; position: relative; overflow: hidden; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--white); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .modal-body { padding: 2.5rem; }
         .modal-time-stamp { color: var(--cardiff-red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; display: block; }
-        .modal-author { color: #666; font-size: 0.85rem; margin-bottom: 1.5rem; display: block; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
         .modal-body h2 { font-size: 2rem; margin-bottom: 1rem; color: #000; }
         .modal-text { font-size: 1.1rem; line-height: 1.8; color: #333; white-space: pre-wrap; }
 
@@ -101,7 +97,6 @@
         .input-group { margin-bottom: 1.5rem; }
         .input-group label { display: block; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; }
         .input-group input, .input-group textarea { width: 100%; padding: 1rem; border: 2px solid #e1e4e8; border-radius: 8px; font-size: 1rem; outline: none; }
-        .input-group input:focus, .input-group textarea:focus { border-color: var(--cardiff-red); }
         
         button { padding: 1rem 2rem; background: var(--cardiff-red); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: var(--transition); }
         button:hover { background: var(--dark-red); }
@@ -112,7 +107,6 @@
         #login-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
         .login-box { background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 360px; text-align: center; }
 
-        .loader { text-align: center; padding: 6rem; font-weight: 600; color: #888; }
         footer { padding: 4rem 5%; text-align: center; color: #888; border-top: 1px solid #ddd; margin-top: 2rem; }
         .admin-link { text-decoration: underline; cursor: pointer; color: #666; font-size: 0.9rem; }
     </style>
@@ -121,15 +115,13 @@
 
     <header>
         <div class="logo" onclick="location.reload()">Cardiff Pulse</div>
-        <div class="live-status" id="connection-badge"><div class="dot" id="status-dot"></div> <span id="status-text">REALTIME SYNC</span></div>
+        <div class="live-status"><div class="dot"></div> <span>REALTIME SYNC</span></div>
     </header>
 
     <main>
         <h2 class="hero-title">Live Cardiff Headlines</h2>
         <div id="debug-log"></div>
-        <div id="loading-state" class="loader">
-            <p>Connecting to news database...</p>
-        </div>
+        <div id="loading-state" style="text-align:center; padding: 4rem;">Connecting to news database...</div>
         <div id="posts-grid"></div>
     </main>
 
@@ -139,7 +131,6 @@
             <img id="modal-img" style="width:100%; height:400px; object-fit:cover;">
             <div class="modal-body">
                 <span id="modal-time" class="modal-time-stamp"></span>
-                <span id="modal-author" class="modal-author"></span>
                 <h2 id="modal-title"></h2>
                 <div id="modal-desc" class="modal-text"></div>
             </div>
@@ -156,29 +147,29 @@
                 <input type="hidden" id="edit-id">
                 <div class="input-group">
                     <label>Headline</label>
-                    <input type="text" id="post-title" required placeholder="Enter headline...">
+                    <input type="text" id="post-title" required>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div class="input-group">
                         <label>Date (e.g. 24 Oct 2025)</label>
-                        <input type="text" id="post-date" placeholder="Today" required>
+                        <input type="text" id="post-date" required>
                     </div>
                     <div class="input-group">
                         <label>Time (e.g. 10:30 AM)</label>
-                        <input type="text" id="post-time" placeholder="Now" required>
+                        <input type="text" id="post-time" required>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Reporter Name</label>
-                    <input type="text" id="post-author" placeholder="Enter your name...">
+                    <label>Story by (Reporter Name)</label>
+                    <input type="text" id="post-author" placeholder="John Doe">
                 </div>
                 <div class="input-group">
-                    <label>Image URL (Optional)</label>
-                    <input type="url" id="post-image" placeholder="https://...">
+                    <label>Image URL</label>
+                    <input type="url" id="post-image">
                 </div>
                 <div class="input-group">
                     <label>Story Content</label>
-                    <textarea id="post-desc" rows="10" required placeholder="Write story..."></textarea>
+                    <textarea id="post-desc" rows="10" required></textarea>
                 </div>
                 <button type="submit" id="submit-btn" style="width:100%;">Post News Story</button>
             </form>
@@ -208,72 +199,41 @@
         let supabase;
         let newsData = [];
 
-        function logError(msg) {
-            const log = document.getElementById('debug-log');
-            const loader = document.getElementById('loading-state');
-            if (loader) loader.style.display = 'none';
-            if (log) {
-                log.style.display = 'block';
-                log.innerHTML = `<strong>ERROR:</strong> ${msg}`;
-            }
-            console.error("News Pulse Error:", msg);
-        }
-
         async function init() {
             const lib = window.supabase;
-            if (!lib || typeof lib.createClient !== 'function') {
-                logError("Database library failed to initialize.");
-                return;
-            }
-
-            try {
-                supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
-                supabase.channel('news_pulse').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchNews).subscribe();
-                await fetchNews();
-                document.getElementById('post-form').onsubmit = handleNewsSubmission;
-            } catch (e) {
-                logError(e.message);
-            }
+            if (!lib) return;
+            supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
+            await fetchNews();
+            document.getElementById('post-form').onsubmit = handleNewsSubmission;
         }
 
         async function fetchNews() {
-            if (!supabase) return;
-            try {
-                const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
+            const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+            if (!error) {
                 newsData = data || [];
                 renderUI();
                 document.getElementById('loading-state').style.display = 'none';
-            } catch (err) {
-                logError(err.message);
             }
         }
 
         function renderUI() {
             const grid = document.getElementById('posts-grid');
             const adminList = document.getElementById('admin-list');
-            grid.innerHTML = '';
-            adminList.innerHTML = '';
-
-            if (newsData.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; width:100%; grid-column:1/-1; padding: 2rem;">No news articles found.</p>';
-                return;
-            }
+            grid.innerHTML = ''; adminList.innerHTML = '';
 
             newsData.forEach(post => {
-                const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
-                const dateLabel = post.aired_date || 'Today';
-                const timeLabel = post.aired_time || 'Recent';
-                const authorLabel = post.author_name ? `By ${post.author_name}` : '';
+                const displayImage = post.image_url || DEFAULT_IMAGE;
+                
+                // We use time_label if it exists, otherwise use what we have
+                const timestamp = post.time_label || 'Recent';
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
                 card.onclick = () => openModal(post);
                 card.innerHTML = `
-                    <img src="${displayImage}" alt="News Image" onerror="this.src='${DEFAULT_IMAGE}'">
+                    <img src="${displayImage}" onerror="this.src='${DEFAULT_IMAGE}'">
                     <div class="post-content">
-                        <span class="post-meta">${dateLabel} • ${timeLabel}</span>
-                        ${authorLabel ? `<span class="post-author">${authorLabel}</span>` : ''}
+                        <span class="post-meta">${timestamp}</span>
                         <h3>${post.title}</h3>
                         <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
                     </div>`;
@@ -281,12 +241,10 @@
 
                 const row = document.createElement('div');
                 row.className = 'admin-row';
-                row.innerHTML = `
-                    <span style="flex-grow:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</span> 
-                    <div style="display:flex; gap:5px; flex-shrink:0;">
-                        <button onclick="editPost('${post.id}')" style="padding: 5px 10px;">Edit</button>
-                        <button onclick="deletePost('${post.id}')" style="padding: 5px 10px; background: #666;">Delete</button>
-                    </div>`;
+                row.innerHTML = `<span>${post.title}</span> <div>
+                    <button onclick="editPost('${post.id}')" style="padding:5px;">Edit</button>
+                    <button onclick="deletePost('${post.id}')" style="padding:5px; background:#666;">Del</button>
+                </div>`;
                 adminList.appendChild(row);
             });
         }
@@ -294,28 +252,31 @@
         async function handleNewsSubmission(e) {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
+            
+            const date = document.getElementById('post-date').value;
+            const time = document.getElementById('post-time').value;
+            const author = document.getElementById('post-author').value;
+            const baseDesc = document.getElementById('post-desc').value;
+
+            // COMBINED FALLBACK: We put Date/Time/Author into the time_label 
+            // and description so it works even without database changes
             const postObj = {
                 title: document.getElementById('post-title').value,
-                aired_date: document.getElementById('post-date').value,
-                aired_time: document.getElementById('post-time').value,
-                author_name: document.getElementById('post-author').value,
                 image_url: document.getElementById('post-image').value,
-                description: document.getElementById('post-desc').value
+                time_label: `${date} • ${time}`,
+                description: author ? `STORY BY: ${author}\n\n${baseDesc}` : baseDesc
             };
 
             const { error } = editId 
                 ? await supabase.from('posts').update(postObj).eq('id', editId)
                 : await supabase.from('posts').insert([postObj]);
 
-            if (error) alert("Error saving: " + error.message);
-            else { resetForm(); fetchNews(); if(editId) hideAdmin(); }
+            if (error) alert("Save Error: " + error.message);
+            else { resetForm(); fetchNews(); hideAdmin(); }
         }
 
         async function deletePost(id) {
-            if (confirm("Delete this story?")) {
-                await supabase.from('posts').delete().eq('id', id);
-                fetchNews();
-            }
+            if (confirm("Delete?")) { await supabase.from('posts').delete().eq('id', id); fetchNews(); }
         }
 
         function editPost(id) {
@@ -323,60 +284,38 @@
             if (!post) return;
             document.getElementById('edit-id').value = post.id;
             document.getElementById('post-title').value = post.title;
-            document.getElementById('post-date').value = post.aired_date || '';
-            document.getElementById('post-time').value = post.aired_time || '';
-            document.getElementById('post-author').value = post.author_name || '';
             document.getElementById('post-image').value = post.image_url || '';
-            document.getElementById('post-desc').value = post.description;
-            document.getElementById('submit-btn').innerText = "Update News Story";
+            document.getElementById('post-desc').value = post.description || '';
+            document.getElementById('submit-btn').innerText = "Update";
         }
 
-        function resetForm() { 
-            document.getElementById('post-form').reset(); 
-            document.getElementById('edit-id').value = ''; 
-            document.getElementById('submit-btn').innerText = "Post News Story";
-            
-            // Set some defaults
+        function resetForm() {
+            document.getElementById('post-form').reset();
+            document.getElementById('edit-id').value = '';
             const now = new Date();
-            document.getElementById('post-date').value = now.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-            document.getElementById('post-time').value = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+            document.getElementById('post-date').value = now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+            document.getElementById('post-time').value = now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
         }
 
         function openModal(post) {
-            const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
-            document.getElementById('modal-time').innerText = `${post.aired_date || 'Today'} • ${post.aired_time || 'Recent'}`;
-            document.getElementById('modal-author').innerText = post.author_name ? `Story by ${post.author_name}` : '';
+            document.getElementById('modal-time').innerText = post.time_label || 'Recent';
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
-            const modalImg = document.getElementById('modal-img');
-            modalImg.src = displayImage;
-            modalImg.onerror = function() { this.src = DEFAULT_IMAGE; };
+            document.getElementById('modal-img').src = post.image_url || DEFAULT_IMAGE;
             document.getElementById('post-modal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
         }
 
-        function closeModal() { document.getElementById('post-modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
-        
-        function showLogin() { 
-            resetForm();
-            document.getElementById('login-overlay').style.display = 'flex'; 
-        }
+        function closeModal() { document.getElementById('post-modal').style.display = 'none'; }
+        function showLogin() { document.getElementById('login-overlay').style.display = 'flex'; }
         function hideLogin() { document.getElementById('login-overlay').style.display = 'none'; }
-        
         function checkAdminAuth() {
             if (document.getElementById('admin-pass').value === ADMIN_PASS) {
-                hideLogin(); 
-                document.getElementById('admin-view').style.display = 'block';
-            } else alert("Incorrect password.");
+                hideLogin(); document.getElementById('admin-view').style.display = 'block'; resetForm();
+            } else alert("Wrong password");
         }
-
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
 
-        window.onload = () => {
-            let timer = setInterval(() => {
-                if (window.supabase) { clearInterval(timer); init(); }
-            }, 100);
-        };
+        window.onload = () => { setTimeout(init, 500); };
     </script>
 </body>
 </html>
