@@ -32,7 +32,7 @@
         header {
             background-color: var(--sun-red);
             color: var(--white);
-            padding: 0.5rem 5%;
+            padding: 1rem 5%;
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -54,13 +54,16 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            max-height: 60px;
+            /* Increased height to allow for a larger logo */
+            height: 80px;
         }
 
         .logo-img {
-            height: 50px; /* Adjust based on your logo proportions */
+            height: 100%; /* Fills the container height */
             width: auto;
             display: block;
+            /* Filter added to ensure visibility if the PNG is dark */
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));
         }
         
         .nav-strip {
@@ -69,8 +72,8 @@
             display: flex;
             justify-content: center;
             gap: 30px;
-            padding: 10px 0;
-            margin-top: 5px;
+            padding: 12px 0;
+            margin-top: 10px;
         }
 
         .nav-strip span {
@@ -84,6 +87,12 @@
         
         .nav-strip span:hover { color: #ccc; }
         .nav-strip span.active { color: var(--sun-red); }
+
+        /* Mobile Adjustments for Header */
+        @media (max-width: 600px) {
+            .logo-container { height: 60px; }
+            .header-top { flex-direction: column; gap: 10px; text-align: center; }
+        }
 
         /* AD STYLING */
         .ad-container {
@@ -259,7 +268,7 @@
             <div class="logo-container" onclick="navigateTo('news')">
                 <img src="nobglogo.png" alt="CARDIFF PULSE" class="logo-img" onerror="this.style.display='none'; this.parentElement.innerHTML='CARDIFF PULSE';">
             </div>
-            <div style="font-size: 0.7rem; text-align: right; font-weight: bold;">YOUR CAPITAL, YOUR VOICE</div>
+            <div style="font-size: 0.8rem; text-align: right; font-weight: bold; max-width: 150px; text-transform: uppercase;">YOUR CAPITAL, YOUR VOICE</div>
         </div>
         <div class="nav-strip">
             <span id="nav-news" class="active" onclick="navigateTo('news')">NEWS</span>
