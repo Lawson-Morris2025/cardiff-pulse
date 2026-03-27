@@ -533,20 +533,29 @@
         }
 
         function toggleStaffAccess() {
-            const pin = prompt("STAFF ENTRANCE\nEnter Security Passkey:");
-            if (pin === "cardiff2025") {
-                isStaff = true;
+            // Step 1: Password
+            const password = prompt("STAFF ENTRANCE\nEnter Security Password:");
+            if (password === "Meego2025!") {
                 
-                // Toggle UI elements
-                document.getElementById('staff-badge').style.display = 'block';
-                document.querySelectorAll('.admin-only').forEach(el => {
-                    el.style.setProperty('display', 'block', 'important');
-                });
+                // Step 2: 2FA Code
+                const code = prompt("2FA REQUIRED\nEnter 6-digit verification code:");
+                if (code === "081112") {
+                    isStaff = true;
+                    
+                    // Toggle UI elements
+                    document.getElementById('staff-badge').style.display = 'block';
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.style.setProperty('display', 'block', 'important');
+                    });
+                    
+                    renderUI();
+                    alert("Staff access granted. Editor mode enabled.");
+                } else if (code !== null) {
+                    alert("Authentication Failed: Invalid 2FA code.");
+                }
                 
-                renderUI();
-                console.log("Staff mode enabled");
-            } else if (pin !== null) {
-                alert("Access Denied: Invalid Passkey.");
+            } else if (password !== null) {
+                alert("Access Denied: Invalid Password.");
             }
         }
 
