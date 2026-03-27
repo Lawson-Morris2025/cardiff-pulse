@@ -1,92 +1,740 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cardiff Pulse</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-  header { background: #2a2a72; color: white; padding: 1rem; text-align: center; }
-  #posts { max-width: 600px; margin: 2rem auto; }
-  .post { background: #eee; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; }
-  #admin-panel { display: none; max-width: 600px; margin: 2rem auto; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-  input, textarea { width: 100%; padding: 0.5rem; margin: 0.5rem 0; }
-  button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiff Pulse | City News & Updates</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+    <style>
+        :root {
+            --primary-red: #c00;
+            --dark-red: #900;
+            --white: #ffffff;
+            --gray-light: #f4f4f4;
+            --gray-dark: #333;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gray-light);
+            color: var(--gray-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary-red);
+            color: var(--white);
+            padding: 1rem 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        nav ul li a:hover {
+            opacity: 0.8;
+        }
+
+        /* Hero / Main Section */
+        main {
+            padding: 2rem 5%;
+            min-height: 80vh;
+        }
+
+        .section-title {
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary-red);
+            padding-left: 15px;
+            font-size: 1.8rem;
+        }
+
+        /* Post Grid */
+        #posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .post-card {
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .post-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #ddd;
+        }
+
+        .post-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .post-content h3 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-red);
+        }
+
+        .post-content p {
+            font-size: 0.95rem;
+            color: #666;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .empty-state h3 {
+            color: #999;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #bbb;
+        }
+
+        /* About Section */
+        #about-section {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 8px;
+        }
+
+        /* Full Post Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 900px;
+            margin: 40px auto;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            color: white;
+            background: var(--primary-red);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .modal-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-body h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-red);
+        }
+
+        /* Admin Panel */
+        #admin-panel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--primary-red);
+            padding-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: var(--dark-red);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #666;
+        }
+
+        .admin-list {
+            margin-top: 3rem;
+        }
+
+        .admin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--gray-light);
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .admin-actions button {
+            padding: 0.4rem 0.8rem;
+            margin-left: 5px;
+            font-size: 0.8rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #222;
+            color: #888;
+            padding: 2rem 5%;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .admin-link {
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Auth Overlay */
+        #auth-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            width: 300px;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            text-align: center;
+            padding: 4rem 2rem;
+            font-weight: bold;
+            color: var(--primary-red);
+            background: white;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            nav ul li {
+                margin: 0 10px;
+            }
+            .modal-img {
+                height: 250px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <h1>Cardiff Pulse</h1>
-</header>
+    <!-- Header -->
+    <header>
+        <div class="logo" onclick="showSection('home')">Cardiff Pulse</div>
+        <nav>
+            <ul>
+                <li><a onclick="showSection('home')">Home</a></li>
+                <li><a onclick="showSection('about')">About</a></li>
+            </ul>
+        </nav>
+    </header>
 
-<div id="posts"></div>
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Home Section -->
+        <section id="home-section">
+            <h2 class="section-title">Latest Updates</h2>
+            <div id="posts-container">
+                <div id="loader" class="loader">Gathering the latest news...</div>
+                <div id="posts-grid"></div>
+            </div>
+        </section>
 
-<div id="admin-panel">
-  <h3>Admin Panel</h3>
-  <input type="text" id="post-title" placeholder="Post Title">
-  <textarea id="post-content" placeholder="Post Content"></textarea>
-  <button onclick="addPost()">Add Post</button>
-  <button onclick="hideAdmin()">Close Admin</button>
-</div>
+        <!-- About Section -->
+        <section id="about-section">
+            <h2 class="section-title">About Cardiff Pulse</h2>
+            <p>Welcome to <strong>Cardiff Pulse</strong>, the premier independent news source for the capital of Wales. We are dedicated to bringing you the most timely, accurate, and engaging stories from across the city.</p>
+            <br>
+            <p>From the bustling streets of Queen Street to the serene waters of Cardiff Bay, our mission is to keep residents and visitors connected to the heart of the city. We cover local politics, culture, events, and community stories that matter most to you.</p>
+            <br>
+            <p>Cardiff Pulse is powered by community engagement and a passion for storytelling. Whether it's a new restaurant opening in Roath or a major infrastructure update in the city centre, if it's happening in Cardiff, it's on the Pulse.</p>
+        </section>
+    </main>
 
-<script>
-  // --- Supabase setup ---
-  const SUPABASE_URL = 'https://asjgeewdjzuxiwpwsgdo.supabase.co';
-  const SUPABASE_KEY = 'sb_secret_Uq1_HuAcQNppRuu0kwO0Pg_znqfjyjV';
-  const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- Full Post Modal -->
+    <div id="post-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <img id="modal-image" class="modal-img" src="" alt="">
+            <div class="modal-body">
+                <h2 id="modal-title"></h2>
+                <div id="modal-description"></div>
+            </div>
+        </div>
+    </div>
 
-  // --- Hidden admin password ---
-  const ADMIN_PASSWORD = 'yourSecret123'; // change this
+    <!-- Admin Panel -->
+    <div id="admin-panel">
+        <div class="admin-header">
+            <h2>Admin Control Panel</h2>
+            <button class="secondary" onclick="closeAdmin()">Close Panel</button>
+        </div>
 
-  // --- Show admin panel if password correct ---
-  function promptAdmin() {
-    const pass = prompt("Enter admin password:");
-    if(pass === ADMIN_PASSWORD){
-      document.getElementById('admin-panel').style.display = 'block';
-      alert('Admin panel unlocked!');
-    } else {
-      alert('Wrong password!');
-    }
-  }
+        <div id="post-form-container">
+            <h3 id="form-title">Create New Post</h3>
+            <form id="post-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="post-title" required placeholder="Enter news title">
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="post-image" required placeholder="https://images.unsplash.com/photo...">
+                </div>
+                <div class="form-group">
+                    <label>Content</label>
+                    <textarea id="post-desc" rows="6" required placeholder="Write the full story here..."></textarea>
+                </div>
+                <button type="submit" id="submit-btn">Publish Post</button>
+                <button type="button" id="cancel-edit" class="secondary" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+            </form>
+        </div>
 
-  function hideAdmin() {
-    document.getElementById('admin-panel').style.display = 'none';
-  }
+        <div class="admin-list">
+            <h3>Manage Existing Posts</h3>
+            <div id="admin-posts-list"></div>
+        </div>
+    </div>
 
-  // --- Posts ---
-  async function fetchPosts() {
-    const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
-    const postsDiv = document.getElementById('posts');
-    postsDiv.innerHTML = '';
-    data.forEach(post => {
-      const div = document.createElement('div');
-      div.className = 'post';
-      div.innerHTML = `<h4>${post.title}</h4><p>${post.content}</p>`;
-      postsDiv.appendChild(div);
-    });
-  }
+    <!-- Password Overlay -->
+    <div id="auth-overlay" style="display:none;">
+        <div class="auth-card">
+            <h3>Admin Login</h3>
+            <p style="margin-bottom: 1rem; font-size: 0.9rem; color: #666;">Enter password to access</p>
+            <input type="password" id="admin-pass" style="width:100%; padding: 0.5rem; margin-bottom:1rem; border:1px solid #ddd;">
+            <button onclick="checkPassword()" style="width:100%;">Access Panel</button>
+            <button onclick="hideAuth()" class="secondary" style="width:100%; margin-top: 5px; background: none; color: #666;">Cancel</button>
+        </div>
+    </div>
 
-  async function addPost() {
-    const title = document.getElementById('post-title').value;
-    const content = document.getElementById('post-content').value;
-    if(!title || !content) return alert("Title and content required!");
-    const { data, error } = await supabase.from('posts').insert([{ title, content }]);
-    if(error) alert(error.message);
-    else {
-      document.getElementById('post-title').value = '';
-      document.getElementById('post-content').value = '';
-      fetchPosts();
-    }
-  }
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Cardiff Pulse. All rights reserved.</p>
+        <p style="margin-top: 10px;"><span class="admin-link" onclick="showAuth()">Admin Login</span></p>
+    </footer>
 
-  // --- Initialize ---
-  fetchPosts();
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://t85vjln4nhxpxkm3w_d-aw_cit7bn-p.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p';
+        const ADMIN_PASS = 'Meego2025!';
 
-  // --- Secret admin trigger: double-click header ---
-  document.querySelector('header').addEventListener('dblclick', promptAdmin);
-</script>
+        let supabase;
+        let allPosts = [];
 
+        // Function to initialize everything
+        async function init() {
+            try {
+                if (!window.supabase) {
+                    console.warn('Waiting for Supabase library...');
+                    setTimeout(init, 200);
+                    return;
+                }
+
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log("Supabase initialized successfully.");
+                
+                await fetchPosts();
+
+                const form = document.getElementById('post-form');
+                if(form) {
+                    form.onsubmit = handleFormSubmit;
+                }
+            } catch (err) {
+                console.error("Initialization error:", err);
+            }
+        }
+
+        window.addEventListener('load', init);
+
+        // Navigation Logic
+        function showSection(section) {
+            const home = document.getElementById('home-section');
+            const about = document.getElementById('about-section');
+            
+            if (section === 'home') {
+                home.style.display = 'block';
+                about.style.display = 'none';
+            } else {
+                home.style.display = 'none';
+                about.style.display = 'block';
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // Fetch Data
+        async function fetchPosts() {
+            const loader = document.getElementById('loader');
+            const grid = document.getElementById('posts-grid');
+            
+            if(loader) loader.style.display = 'block';
+            if(grid) grid.style.display = 'none';
+
+            try {
+                if (!supabase) throw new Error("Supabase client not initialized.");
+                
+                const { data, error } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allPosts = data || [];
+                renderPosts();
+                renderAdminList();
+            } catch (err) {
+                console.error('Error fetching posts:', err);
+                if(grid) {
+                    grid.style.display = 'block';
+                    grid.innerHTML = `<div class="empty-state"><h3>Connection Error</h3><p>${err.message}</p></div>`;
+                }
+            } finally {
+                if(loader) loader.style.display = 'none';
+                if(grid) grid.style.display = 'grid';
+            }
+        }
+
+        // Render Homepage
+        function renderPosts() {
+            const grid = document.getElementById('posts-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            if (allPosts.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No news stories here yet</h3>
+                        <p>Check back later for the latest updates from Cardiff.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            allPosts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'post-card';
+                card.onclick = () => openModal(post);
+                card.innerHTML = `
+                    <img src="${post.image_url}" onerror="this.src='https://via.placeholder.com/400x200?text=Cardiff+Pulse'">
+                    <div class="post-content">
+                        <h3>${post.title}</h3>
+                        <p>${post.description}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Modal Logic
+        function openModal(post) {
+            document.getElementById('modal-title').innerText = post.title;
+            document.getElementById('modal-description').innerText = post.description;
+            document.getElementById('modal-image').src = post.image_url;
+            document.getElementById('post-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('post-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Admin Auth
+        function showAuth() {
+            document.getElementById('auth-overlay').style.display = 'flex';
+        }
+
+        function hideAuth() {
+            document.getElementById('auth-overlay').style.display = 'none';
+        }
+
+        function checkPassword() {
+            const pass = document.getElementById('admin-pass').value;
+            if (pass === ADMIN_PASS) {
+                hideAuth();
+                document.getElementById('admin-panel').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                document.getElementById('admin-pass').value = '';
+            } else {
+                alert('Incorrect password.');
+            }
+        }
+
+        function closeAdmin() {
+            document.getElementById('admin-panel').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetForm();
+        }
+
+        // CRUD Operations
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('post-title').value;
+            const image_url = document.getElementById('post-image').value;
+            const description = document.getElementById('post-desc').value;
+
+            if (!supabase) {
+                alert("Database connection not ready. Please refresh the page.");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Processing...';
+
+            const postData = { title, image_url, description };
+
+            try {
+                let response;
+                if (id) {
+                    response = await supabase
+                        .from('posts')
+                        .update(postData)
+                        .eq('id', id);
+                } else {
+                    response = await supabase
+                        .from('posts')
+                        .insert([postData]);
+                }
+
+                if (response.error) throw response.error;
+
+                alert('Post published successfully!');
+                resetForm();
+                await fetchPosts();
+            } catch (err) {
+                console.error("Submission error details:", err);
+                alert('Error saving post: ' + (err.message || 'Unknown error. Check console.'));
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = id ? 'Update Post' : 'Publish Post';
+            }
+        }
+
+        async function deletePost(id) {
+            if (!confirm('Are you sure you want to delete this post?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('posts')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                await fetchPosts();
+            } catch (err) {
+                alert('Error deleting post: ' + err.message);
+            }
+        }
+
+        function editPost(id) {
+            const post = allPosts.find(p => p.id == id);
+            if (!post) return;
+
+            document.getElementById('edit-id').value = post.id;
+            document.getElementById('post-title').value = post.title;
+            document.getElementById('post-image').value = post.image_url;
+            document.getElementById('post-desc').value = post.description;
+
+            document.getElementById('form-title').innerText = 'Edit Post';
+            document.getElementById('submit-btn').innerText = 'Update Post';
+            document.getElementById('cancel-edit').style.display = 'inline-block';
+            
+            document.getElementById('admin-panel').scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function resetForm() {
+            const form = document.getElementById('post-form');
+            if(form) form.reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('form-title').innerText = 'Create New Post';
+            document.getElementById('submit-btn').innerText = 'Publish Post';
+            document.getElementById('cancel-edit').style.display = 'none';
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('admin-posts-list');
+            if(!list) return;
+            list.innerHTML = '';
+
+            if (allPosts.length === 0) {
+                list.innerHTML = '<p>No posts to display.</p>';
+                return;
+            }
+
+            allPosts.forEach(post => {
+                const item = document.createElement('div');
+                item.className = 'admin-item';
+                item.innerHTML = `
+                    <span style="font-weight:bold;">${post.title}</span>
+                    <div class="admin-actions">
+                        <button onclick="editPost('${post.id}')">Edit</button>
+                        <button class="secondary" onclick="deletePost('${post.id}')">Delete</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('post-modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
 </body>
 </html>
