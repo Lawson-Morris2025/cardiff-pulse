@@ -20,7 +20,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Black', 'Arial', sans-serif; }
         body { background-color: var(--bg-gray); color: var(--text-main); line-height: 1.2; }
 
-        /* Tabloid Style Header */
+        /* Header & Navigation */
         header {
             background-color: var(--sun-red);
             color: var(--white);
@@ -73,15 +73,26 @@
             transition: color 0.2s;
         }
         
-        .nav-strip span:hover {
-            color: #ccc;
-        }
+        .nav-strip span:hover { color: #ccc; }
+        .nav-strip span.active { color: var(--sun-red); }
 
-        .nav-strip span.active {
-            color: var(--sun-red);
+        /* AD STYLING (Placeholder) */
+        .ad-container {
+            max-width: 1200px;
+            margin: 10px auto;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #ccc;
+            color: #999;
+            font-size: 0.7rem;
+            overflow: hidden;
+            text-transform: uppercase;
         }
+        .ad-top-leaderboard { width: 100%; height: 90px; }
+        .ad-in-feed { grid-column: 1 / -1; height: 150px; margin: 20px 0; border: 1px solid #eee; }
 
-        /* Breaking News Ticker */
         .ticker {
             background: #fff;
             border-bottom: 1px solid #ddd;
@@ -116,13 +127,8 @@
             letter-spacing: -1px;
         }
 
-        #news-section, #about-section {
-            display: none;
-        }
-
-        #news-section.active, #about-section.active {
-            display: block;
-        }
+        #news-section, #about-section { display: none; }
+        #news-section.active, #about-section.active { display: block; }
 
         #posts-grid {
             display: grid;
@@ -171,20 +177,14 @@
             overflow: hidden;
         }
 
-        /* About Page Styles */
-        .about-container {
-            max-width: 800px;
-            margin: 0 auto;
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-        }
+        /* About Page */
+        .about-container { max-width: 800px; margin: 0 auto; font-family: 'Arial', sans-serif; line-height: 1.6; }
         .about-container h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; font-size: 2rem; margin-bottom: 1.5rem; }
         .about-container p { margin-bottom: 1.5rem; font-size: 1.1rem; }
 
-        /* Modal Layout for Big News */
+        /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
         .modal-content { background: var(--white); max-width: 900px; margin: 0 auto; min-height: 100vh; position: relative; }
-        
         .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--sun-red); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; z-index: 10; }
         .modal-body { padding: 2rem; }
         .modal-time-stamp { color: var(--sun-red); font-weight: 900; font-size: 1rem; margin-bottom: 1rem; display: block; text-transform: uppercase; border-left: 4px solid var(--sun-red); padding-left: 10px; }
@@ -226,6 +226,12 @@
         </div>
     </header>
 
+    <!-- Top Ad Placement (Leaderboard) -->
+    <div class="ad-container ad-top-leaderboard">
+        <!-- Replace this with your Ad Service Code later -->
+        Advertisement Placement (Leaderboard)
+    </div>
+
     <div class="ticker">
         <span class="ticker-label">Breaking</span>
         <marquee behavior="scroll" direction="left">Welcome to Cardiff Pulse. Your independent source for news across the capital city of Wales.</marquee>
@@ -244,7 +250,13 @@
             <h2 class="hero-title">About Cardiff Pulse</h2>
             <div class="about-container">
                 <p><strong>Cardiff Pulse</strong> is the heartbeat of the capital. We are an independent news organization dedicated to bringing you the most relevant, hard-hitting, and engaging stories from across Cardiff and the surrounding valleys.</p>
-                <p>Founded in 2025, our mission is to provide a platform for local voices and to ensure that the people of Cardiff are kept informed about the issues that matter most to them—from local politics and infrastructure to community events and cultural highlights.</p>
+                <p>Founded in 2025, our mission is to provide a platform for local voices and to ensure that the people of Cardiff are kept informed about the issues that matter most to them.</p>
+                
+                <!-- Ad Placement in About Page -->
+                <div class="ad-container" style="height: 250px; width: 300px; margin: 20px auto;">
+                    Square Ad Placement
+                </div>
+
                 <p>Our team of dedicated reporters works around the clock to ensure our "Real-time Sync" technology brings you headlines as they happen. We believe in fast, fair, and bold journalism.</p>
                 <p>Got a story? Reach out to our newsroom today.</p>
             </div>
@@ -258,6 +270,12 @@
             <div class="modal-body">
                 <span id="modal-time" class="modal-time-stamp"></span>
                 <h2 id="modal-title"></h2>
+                
+                <!-- Mid-Article Ad -->
+                <div class="ad-container" style="height: 90px; margin-bottom: 20px;">
+                    Banner Ad Placement
+                </div>
+
                 <div id="modal-desc" class="modal-text"></div>
             </div>
             <div style="padding: 2rem; background: #f9f9f9; text-align: center; font-weight: bold; border-top: 1px solid #ddd;">
@@ -275,7 +293,7 @@
             <form id="post-form">
                 <input type="hidden" id="edit-id">
                 <div class="input-group">
-                    <label>Headline (Make it punchy!)</label>
+                    <label>Headline</label>
                     <input type="text" id="post-title" required>
                 </div>
                 <div class="input-group">
@@ -284,7 +302,7 @@
                 </div>
                 <div class="input-group">
                     <label>Image URL</label>
-                    <input type="url" id="post-image">
+                    <input type="url" id="post-image" placeholder="Leave empty for logo.png">
                 </div>
                 <div class="input-group">
                     <label>Story Text</label>
@@ -329,7 +347,7 @@
         const SUPABASE_KEY = 'sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p';
         const ADMIN_PASS = 'Meego2025!';
         const ADMIN_PIN = '081112'; 
-        const DEFAULT_IMAGE = 'https://via.placeholder.com/600x400?text=Cardiff+Pulse+News'; 
+        const FALLBACK_IMAGE = 'logo.png'; 
 
         let supabase;
         let newsData = [];
@@ -337,9 +355,7 @@
         function formatDate(isoString) {
             if (!isoString) return "Just now";
             const date = new Date(isoString);
-            return date.toLocaleString('en-GB', { 
-                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-            }).toUpperCase();
+            return date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
         }
 
         async function init() {
@@ -364,15 +380,23 @@
             const adminList = document.getElementById('admin-list');
             grid.innerHTML = ''; adminList.innerHTML = '';
 
-            newsData.forEach(post => {
-                const displayImage = post.image_url || DEFAULT_IMAGE;
+            newsData.forEach((post, index) => {
+                // If every 6th post, inject an ad placeholder to maintain news flow
+                if (index > 0 && index % 6 === 0) {
+                    const adDiv = document.createElement('div');
+                    adDiv.className = 'ad-container ad-in-feed';
+                    adDiv.innerHTML = 'In-Feed Advertisement Placeholder';
+                    grid.appendChild(adDiv);
+                }
+
+                const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : FALLBACK_IMAGE;
                 const dateLabel = formatDate(post.created_at);
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
                 card.onclick = () => openModal(post);
                 card.innerHTML = `
-                    <img src="${displayImage}" onerror="this.src='${DEFAULT_IMAGE}'">
+                    <img src="${displayImage}" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE}'">
                     <div class="post-content">
                         <span class="post-meta">${dateLabel}</span>
                         <h3>${post.title}</h3>
@@ -391,10 +415,8 @@
         }
 
         function navigateTo(page) {
-            // Sections
             const newsSec = document.getElementById('news-section');
             const aboutSec = document.getElementById('about-section');
-            // Nav spans
             const navNews = document.getElementById('nav-news');
             const navAbout = document.getElementById('nav-about');
 
@@ -417,17 +439,14 @@
             const editId = document.getElementById('edit-id').value;
             const author = document.getElementById('post-author').value;
             const content = document.getElementById('post-desc').value;
-
             const postObj = {
                 title: document.getElementById('post-title').value,
                 image_url: document.getElementById('post-image').value,
                 description: author ? `BY ${author.toUpperCase()}\n\n${content}` : content
             };
-
             const { error } = editId 
                 ? await supabase.from('posts').update(postObj).eq('id', editId)
                 : await supabase.from('posts').insert([postObj]);
-
             if (error) alert("Error: " + error.message);
             else { resetForm(); fetchNews(); hideAdmin(); }
         }
@@ -445,7 +464,6 @@
             document.getElementById('edit-id').value = post.id;
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-image').value = post.image_url || '';
-            
             let desc = post.description || '';
             if (desc.startsWith("BY ")) {
                 const parts = desc.split("\n\n");
@@ -455,7 +473,6 @@
                 document.getElementById('post-author').value = '';
                 document.getElementById('post-desc').value = desc;
             }
-            
             document.getElementById('submit-btn').innerText = "Update Story";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -467,10 +484,13 @@
         }
 
         function openModal(post) {
+            const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : FALLBACK_IMAGE;
             document.getElementById('modal-time').innerText = formatDate(post.created_at);
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
-            document.getElementById('modal-img').src = post.image_url || DEFAULT_IMAGE;
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = displayImage;
+            modalImg.onerror = function() { this.onerror=null; this.src=FALLBACK_IMAGE; };
             document.getElementById('post-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
@@ -517,7 +537,6 @@
         }
         
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
-
         window.onload = () => { setTimeout(init, 500); };
     </script>
 </body>
