@@ -3,176 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cardiff Pulse | Real-time City News</title>
+    <title>Cardiff Pulse | Cardiff's Latest News</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --cardiff-red: #d32f2f;
-            --dark-red: #b71c1c;
-            --bg-gray: #f0f2f5;
-            --text-main: #1c1e21;
-            --text-secondary: #65676b;
+            --sun-red: #eb0000;
+            --sun-black: #000000;
+            --bg-gray: #ffffff;
+            --text-main: #222222;
+            --text-secondary: #444444;
             --white: #ffffff;
-            --shadow: 0 4px 12px rgba(0,0,0,0.1);
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 2px 8px rgba(0,0,0,0.15);
+            --transition: all 0.2s ease-in-out;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-gray); color: var(--text-main); line-height: 1.5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Black', 'Arial', sans-serif; }
+        body { background-color: var(--bg-gray); color: var(--text-main); line-height: 1.2; }
 
+        /* Tabloid Style Header */
         header {
-            background-color: var(--cardiff-red);
+            background-color: var(--sun-red);
             color: var(--white);
-            padding: 1rem 5%;
+            padding: 0.5rem 5%;
             position: sticky;
             top: 0;
             z-index: 1000;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 4px solid var(--sun-black);
         }
 
-        .logo { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
-        .live-status { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; }
-        .dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: pulse 1.5s infinite; }
-        
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+        .header-top {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+        }
 
-        main { padding: 2rem 5%; max-width: 1300px; margin: 0 auto; min-height: 85vh; }
-        .hero-title { margin-bottom: 2rem; font-size: 1.8rem; color: var(--text-main); border-bottom: 3px solid var(--cardiff-red); display: inline-block; padding-bottom: 5px; }
+        .logo { 
+            font-size: 2.5rem; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            cursor: pointer; 
+            letter-spacing: -2px;
+            background: var(--white);
+            color: var(--sun-red);
+            padding: 0 10px;
+            display: inline-block;
+        }
+        
+        .nav-strip {
+            background: var(--sun-black);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 10px 0;
+            margin-top: 5px;
+        }
+
+        .nav-strip span {
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .nav-strip span:hover {
+            color: #ccc;
+        }
+
+        .nav-strip span.active {
+            color: var(--sun-red);
+        }
+
+        /* Breaking News Ticker */
+        .ticker {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 5%;
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .ticker-label {
+            background: var(--sun-red);
+            color: white;
+            padding: 2px 8px;
+            font-weight: bold;
+            margin-right: 15px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        main { padding: 1.5rem 5%; max-width: 1200px; margin: 0 auto; min-height: 85vh; }
+        
+        .hero-title { 
+            margin-bottom: 1.5rem; 
+            font-size: 2.2rem; 
+            color: var(--sun-black); 
+            text-transform: uppercase;
+            border-bottom: 8px solid var(--sun-red);
+            display: block;
+            padding-bottom: 5px;
+            letter-spacing: -1px;
+        }
+
+        #news-section, #about-section {
+            display: none;
+        }
+
+        #news-section.active, #about-section.active {
+            display: block;
+        }
 
         #posts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
 
         .post-card {
             background: var(--white);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
             transition: var(--transition);
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(0,0,0,0.03);
-            animation: fadeIn 0.5s ease;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .post-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
-        .post-card img { width: 100%; height: 210px; object-fit: cover; background: #e1e4e8; transition: var(--transition); }
+        .post-card:hover h3 { color: var(--sun-red); text-decoration: underline; }
+        .post-card img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
         
-        .post-content { padding: 1.5rem; flex-grow: 1; }
-        .post-meta { font-size: 0.75rem; color: var(--cardiff-red); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
-        .post-content h3 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #000; line-height: 1.3; }
-        .post-content p { color: var(--text-secondary); font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .post-content { padding: 10px 0; flex-grow: 1; }
+        .post-meta { 
+            font-family: 'Arial', sans-serif;
+            font-size: 0.7rem; 
+            color: #666; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+            display: block; 
+        }
+        .post-content h3 { 
+            font-size: 1.5rem; 
+            margin-bottom: 8px; 
+            color: #000; 
+            line-height: 1.1;
+            font-weight: 900;
+        }
+        .post-content p { 
+            font-family: 'Arial', sans-serif;
+            color: var(--text-secondary); 
+            font-size: 0.9rem; 
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; overflow-y: auto; backdrop-filter: blur(4px); }
-        .modal-content { background: var(--white); max-width: 800px; margin: 2rem auto; border-radius: 16px; position: relative; overflow: hidden; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* About Page Styles */
+        .about-container {
+            max-width: 800px;
+            margin: 0 auto;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+        }
+        .about-container h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; font-size: 2rem; margin-bottom: 1.5rem; }
+        .about-container p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+
+        /* Modal Layout for Big News */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
+        .modal-content { background: var(--white); max-width: 900px; margin: 0 auto; min-height: 100vh; position: relative; }
         
-        .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--white); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .modal-body { padding: 2.5rem; }
-        .modal-time-stamp { color: var(--cardiff-red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; display: block; }
-        .modal-body h2 { font-size: 2rem; margin-bottom: 1rem; color: #000; }
-        .modal-text { font-size: 1.1rem; line-height: 1.8; color: #333; white-space: pre-wrap; }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--sun-red); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; z-index: 10; }
+        .modal-body { padding: 2rem; }
+        .modal-time-stamp { color: var(--sun-red); font-weight: 900; font-size: 1rem; margin-bottom: 1rem; display: block; text-transform: uppercase; border-left: 4px solid var(--sun-red); padding-left: 10px; }
+        .modal-body h2 { font-size: 3rem; margin-bottom: 1.5rem; color: #000; line-height: 1; letter-spacing: -2px; }
+        .modal-text { font-family: 'Georgia', serif; font-size: 1.25rem; line-height: 1.6; color: #111; white-space: pre-wrap; }
 
-        #admin-view { display: none; position: fixed; inset: 0; background: var(--white); z-index: 3000; overflow-y: auto; padding: 3rem 5%; }
-        .admin-container { max-width: 700px; margin: 0 auto; }
-        .input-group { margin-bottom: 1.5rem; }
-        .input-group label { display: block; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        .input-group input, .input-group textarea { width: 100%; padding: 1rem; border: 2px solid #e1e4e8; border-radius: 8px; font-size: 1rem; outline: none; }
-        .input-group input:focus, .input-group textarea:focus { border-color: var(--cardiff-red); }
+        /* Admin UI */
+        #admin-view { display: none; position: fixed; inset: 0; background: #f4f4f4; z-index: 3000; overflow-y: auto; padding: 2rem; }
+        .admin-container { max-width: 800px; margin: 0 auto; background: white; padding: 2rem; box-shadow: var(--shadow); }
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { display: block; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 4px; }
+        .input-group input, .input-group textarea { width: 100%; padding: 0.8rem; border: 1px solid #ccc; font-family: 'Arial', sans-serif; }
         
-        button { padding: 1rem 2rem; background: var(--cardiff-red); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: var(--transition); }
-        button:hover { background: var(--dark-red); }
-        button.cancel { background: #e4e6eb; color: #050505; margin-left: 10px; }
+        button { padding: 1rem; background: var(--sun-red); color: white; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        button:hover { background: #c00; }
+        button.cancel { background: #333; margin-left: 10px; }
 
-        .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 0.8rem; border: 1px solid #eee; }
+        .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-family: 'Arial', sans-serif; font-size: 0.9rem; }
 
-        #login-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 360px; text-align: center; }
+        /* Security Forms */
+        #login-overlay, #pin-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
+        .security-box { background: white; padding: 2rem; width: 100%; max-width: 400px; text-align: center; border: 10px solid var(--sun-red); }
+        .security-step { font-size: 0.7rem; color: #666; font-weight: bold; text-transform: uppercase; }
 
-        footer { padding: 4rem 5%; text-align: center; color: #888; border-top: 1px solid #ddd; margin-top: 2rem; }
-        .admin-link { text-decoration: underline; cursor: pointer; color: #666; font-size: 0.9rem; }
+        footer { background: #222; color: #ccc; padding: 3rem 5%; text-align: center; font-family: 'Arial', sans-serif; font-size: 0.8rem; }
+        .admin-link { text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo" onclick="location.reload()">Cardiff Pulse</div>
-        <div class="live-status"><div class="dot"></div> <span>REALTIME SYNC</span></div>
+        <div class="header-top">
+            <div class="logo" onclick="navigateTo('news')">CARDIFF PULSE</div>
+            <div style="font-size: 0.7rem; text-align: right; font-weight: bold;">YOUR CAPITAL, YOUR VOICE</div>
+        </div>
+        <div class="nav-strip">
+            <span id="nav-news" class="active" onclick="navigateTo('news')">NEWS</span>
+            <span id="nav-about" onclick="navigateTo('about')">ABOUT US</span>
+        </div>
     </header>
 
+    <div class="ticker">
+        <span class="ticker-label">Breaking</span>
+        <marquee behavior="scroll" direction="left">Welcome to Cardiff Pulse. Your independent source for news across the capital city of Wales.</marquee>
+    </div>
+
     <main>
-        <h2 class="hero-title">Live Cardiff Headlines</h2>
-        <div id="loading-state" style="text-align:center; padding: 4rem; color: #888;">Connecting to database...</div>
-        <div id="posts-grid"></div>
+        <!-- News Section -->
+        <section id="news-section" class="active">
+            <h2 class="hero-title">Cardiff's Latest News</h2>
+            <div id="loading-state" style="text-align:center; padding: 4rem; font-weight: bold;">LOADING HEADLINES...</div>
+            <div id="posts-grid"></div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about-section">
+            <h2 class="hero-title">About Cardiff Pulse</h2>
+            <div class="about-container">
+                <p><strong>Cardiff Pulse</strong> is the heartbeat of the capital. We are an independent news organization dedicated to bringing you the most relevant, hard-hitting, and engaging stories from across Cardiff and the surrounding valleys.</p>
+                <p>Founded in 2025, our mission is to provide a platform for local voices and to ensure that the people of Cardiff are kept informed about the issues that matter most to them—from local politics and infrastructure to community events and cultural highlights.</p>
+                <p>Our team of dedicated reporters works around the clock to ensure our "Real-time Sync" technology brings you headlines as they happen. We believe in fast, fair, and bold journalism.</p>
+                <p>Got a story? Reach out to our newsroom today.</p>
+            </div>
+        </section>
     </main>
 
     <div id="post-modal" class="modal">
         <div class="modal-content">
             <div class="modal-close" onclick="closeModal()">✕</div>
-            <img id="modal-img" style="width:100%; height:400px; object-fit:cover;">
+            <img id="modal-img" style="width:100%; height:500px; object-fit:cover;">
             <div class="modal-body">
                 <span id="modal-time" class="modal-time-stamp"></span>
                 <h2 id="modal-title"></h2>
                 <div id="modal-desc" class="modal-text"></div>
+            </div>
+            <div style="padding: 2rem; background: #f9f9f9; text-align: center; font-weight: bold; border-top: 1px solid #ddd;">
+                END OF STORY
             </div>
         </div>
     </div>
 
     <div id="admin-view">
         <div class="admin-container">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-                <h1>News Editor</h1>
-                <button class="cancel" onclick="hideAdmin()">Exit</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 4px solid var(--sun-red); padding-bottom: 10px;">
+                <h1 style="letter-spacing: -1px; text-transform: uppercase;">Newsroom Editor</h1>
+                <button class="cancel" onclick="hideAdmin()">Close</button>
             </div>
             <form id="post-form">
                 <input type="hidden" id="edit-id">
                 <div class="input-group">
-                    <label>Headline</label>
-                    <input type="text" id="post-title" required placeholder="Enter the breaking news headline...">
+                    <label>Headline (Make it punchy!)</label>
+                    <input type="text" id="post-title" required>
                 </div>
                 <div class="input-group">
-                    <label>Story by (Reporter Name)</label>
-                    <input type="text" id="post-author" placeholder="e.g. John Smith">
+                    <label>Byline / Reporter</label>
+                    <input type="text" id="post-author" placeholder="Reporter Name">
                 </div>
                 <div class="input-group">
                     <label>Image URL</label>
-                    <input type="url" id="post-image" placeholder="https://...">
+                    <input type="url" id="post-image">
                 </div>
                 <div class="input-group">
-                    <label>Story Content</label>
-                    <textarea id="post-desc" rows="10" required placeholder="Write the full story here..."></textarea>
+                    <label>Story Text</label>
+                    <textarea id="post-desc" rows="12" required></textarea>
                 </div>
-                <button type="submit" id="submit-btn" style="width:100%;">Publish News Story</button>
+                <button type="submit" id="submit-btn" style="width:100%; font-size: 1.2rem;">Publish to Live Site</button>
             </form>
-            <div id="admin-list" style="margin-top:2rem; border-top: 1px solid #eee; padding-top: 2rem;"></div>
+            <div id="admin-list" style="margin-top:2rem;"></div>
         </div>
     </div>
 
+    <!-- Security Step 1 -->
     <div id="login-overlay">
-        <div class="login-box">
-            <h2>Admin Login</h2>
-            <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding: 1rem; margin: 1.5rem 0; border: 1px solid #ddd; border-radius: 8px;">
-            <button onclick="checkAdminAuth()" style="width:100%;">Login</button>
-            <button onclick="hideLogin()" class="cancel" style="width:100%; margin-top:10px;">Cancel</button>
+        <div class="security-box">
+            <span class="security-step">Editor Security: Step 1</span>
+            <h2 style="margin: 10px 0; text-transform: uppercase;">Staff Login</h2>
+            <input type="password" id="admin-pass" placeholder="Master Password" style="width:100%; padding: 1rem; margin-bottom: 1rem; border: 1px solid #000;">
+            <button onclick="verifyPassword()" style="width:100%;">Continue</button>
+            <button onclick="hideSecurity()" class="cancel" style="width:100%; margin-top:10px; margin-left: 0;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Security Step 2 -->
+    <div id="pin-overlay">
+        <div class="security-box">
+            <span class="security-step">Editor Security: Step 2</span>
+            <h2 style="margin: 10px 0; text-transform: uppercase;">Enter Access PIN</h2>
+            <input type="password" id="admin-pin" maxlength="6" placeholder="******" style="width:100%; padding: 1rem; margin-bottom: 1rem; border: 1px solid #000; text-align: center; letter-spacing: 10px; font-size: 2rem;">
+            <button onclick="verifyPIN()" style="width:100%;">Grant Access</button>
+            <button onclick="goBackToPassword()" class="cancel" style="width:100%; margin-top:10px; margin-left: 0;">Back</button>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2025 Cardiff Pulse. <span class="admin-link" onclick="showLogin()">Admin Dashboard</span></p>
+        <div style="margin-bottom: 20px; font-weight: 900; font-size: 1.5rem;">CARDIFF PULSE</div>
+        <p>Stay updated with the latest news and community stories from the heart of Wales.</p>
+        <p style="margin-top: 20px;">&copy; 2025 Cardiff Pulse Media Group. <span class="admin-link" onclick="showSecurity()">Staff Access</span></p>
     </footer>
 
     <script>
         const SUPABASE_URL = 'https://asjgeewdjzuxiwpwsgdo.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p';
         const ADMIN_PASS = 'Meego2025!';
-        const DEFAULT_IMAGE = 'logo.png'; 
+        const ADMIN_PIN = '081112'; 
+        const DEFAULT_IMAGE = 'https://via.placeholder.com/600x400?text=Cardiff+Pulse+News'; 
 
         let supabase;
         let newsData = [];
@@ -181,12 +338,8 @@
             if (!isoString) return "Just now";
             const date = new Date(isoString);
             return date.toLocaleString('en-GB', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+            }).toUpperCase();
         }
 
         async function init() {
@@ -223,18 +376,40 @@
                     <div class="post-content">
                         <span class="post-meta">${dateLabel}</span>
                         <h3>${post.title}</h3>
-                        <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
+                        <p>${post.description ? post.description.substring(0, 120) + '...' : ''}</p>
                     </div>`;
                 grid.appendChild(card);
 
                 const row = document.createElement('div');
                 row.className = 'admin-row';
                 row.innerHTML = `<span>${post.title}</span> <div>
-                    <button onclick="editPost('${post.id}')" style="padding:5px 10px; font-size: 0.8rem;">Edit</button>
-                    <button onclick="deletePost('${post.id}')" style="padding:5px 10px; font-size: 0.8rem; background:#666;">Del</button>
+                    <button onclick="editPost('${post.id}')" style="padding:5px 10px; font-size: 0.7rem;">Edit</button>
+                    <button onclick="deletePost('${post.id}')" style="padding:5px 10px; font-size: 0.7rem; background:#333;">X</button>
                 </div>`;
                 adminList.appendChild(row);
             });
+        }
+
+        function navigateTo(page) {
+            // Sections
+            const newsSec = document.getElementById('news-section');
+            const aboutSec = document.getElementById('about-section');
+            // Nav spans
+            const navNews = document.getElementById('nav-news');
+            const navAbout = document.getElementById('nav-about');
+
+            if (page === 'news') {
+                newsSec.classList.add('active');
+                aboutSec.classList.remove('active');
+                navNews.classList.add('active');
+                navAbout.classList.remove('active');
+            } else {
+                newsSec.classList.remove('active');
+                aboutSec.classList.add('active');
+                navNews.classList.remove('active');
+                navAbout.classList.add('active');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function handleNewsSubmission(e) {
@@ -243,23 +418,22 @@
             const author = document.getElementById('post-author').value;
             const content = document.getElementById('post-desc').value;
 
-            // We combine the author into the description as a fallback
             const postObj = {
                 title: document.getElementById('post-title').value,
                 image_url: document.getElementById('post-image').value,
-                description: author ? `STORY BY: ${author}\n\n${content}` : content
+                description: author ? `BY ${author.toUpperCase()}\n\n${content}` : content
             };
 
             const { error } = editId 
                 ? await supabase.from('posts').update(postObj).eq('id', editId)
                 : await supabase.from('posts').insert([postObj]);
 
-            if (error) alert("Save Error: " + error.message);
+            if (error) alert("Error: " + error.message);
             else { resetForm(); fetchNews(); hideAdmin(); }
         }
 
         async function deletePost(id) {
-            if (confirm("Permanently delete this story?")) { 
+            if (confirm("Delete this story?")) { 
                 await supabase.from('posts').delete().eq('id', id); 
                 fetchNews(); 
             }
@@ -272,11 +446,10 @@
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-image').value = post.image_url || '';
             
-            // Clean author tag if present for the editor
             let desc = post.description || '';
-            if (desc.startsWith("STORY BY: ")) {
+            if (desc.startsWith("BY ")) {
                 const parts = desc.split("\n\n");
-                document.getElementById('post-author').value = parts[0].replace("STORY BY: ", "");
+                document.getElementById('post-author').value = parts[0].replace("BY ", "");
                 document.getElementById('post-desc').value = parts.slice(1).join("\n\n");
             } else {
                 document.getElementById('post-author').value = '';
@@ -284,12 +457,13 @@
             }
             
             document.getElementById('submit-btn').innerText = "Update Story";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function resetForm() {
             document.getElementById('post-form').reset();
             document.getElementById('edit-id').value = '';
-            document.getElementById('submit-btn').innerText = "Publish News Story";
+            document.getElementById('submit-btn').innerText = "Publish to Live Site";
         }
 
         function openModal(post) {
@@ -306,13 +480,40 @@
             document.body.style.overflow = 'auto';
         }
         
-        function showLogin() { document.getElementById('login-overlay').style.display = 'flex'; }
-        function hideLogin() { document.getElementById('login-overlay').style.display = 'none'; }
-        
-        function checkAdminAuth() {
+        function showSecurity() {
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('admin-pass').focus();
+        }
+
+        function hideSecurity() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('pin-overlay').style.display = 'none';
+            document.getElementById('admin-pass').value = '';
+            document.getElementById('admin-pin').value = '';
+        }
+
+        function verifyPassword() {
             if (document.getElementById('admin-pass').value === ADMIN_PASS) {
-                hideLogin(); document.getElementById('admin-view').style.display = 'block'; resetForm();
-            } else alert("Wrong password");
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('pin-overlay').style.display = 'flex';
+                document.getElementById('admin-pin').focus();
+            } else alert("Access Denied.");
+        }
+
+        function goBackToPassword() {
+            document.getElementById('pin-overlay').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+
+        function verifyPIN() {
+            if (document.getElementById('admin-pin').value === ADMIN_PIN) {
+                hideSecurity();
+                document.getElementById('admin-view').style.display = 'block';
+                resetForm();
+            } else {
+                alert("Incorrect PIN.");
+                document.getElementById('admin-pin').value = '';
+            }
         }
         
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
