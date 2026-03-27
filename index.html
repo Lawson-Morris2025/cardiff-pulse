@@ -155,8 +155,8 @@
                     <input type="text" id="post-title" required placeholder="Enter headline...">
                 </div>
                 <div class="input-group">
-                    <label>Image URL</label>
-                    <input type="url" id="post-image" required placeholder="https://...">
+                    <label>Image URL (Optional)</label>
+                    <input type="url" id="post-image" placeholder="https://...">
                 </div>
                 <div class="input-group">
                     <label>Story Content</label>
@@ -185,6 +185,7 @@
         const SUPABASE_URL = 'https://asjgeewdjzuxiwpwsgdo.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_t85VjLn4nhxpXkm3w_d-Aw_cIt7bN-p';
         const ADMIN_PASS = 'Meego2025!';
+        const DEFAULT_IMAGE = 'logo.png'; // Define the default image path
 
         let supabase;
         let newsData = [];
@@ -201,31 +202,22 @@
         }
 
         async function init() {
-            // Check for Supabase library using UMD export pattern
             const lib = window.supabase;
-            
             if (!lib || typeof lib.createClient !== 'function') {
                 logError("Database library (Supabase) failed to initialize correctly. Please refresh the page.");
                 return;
             }
 
             try {
-                // Initialize client
                 supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
-                
-                // Set up real-time listener
                 const channel = supabase.channel('news_pulse');
                 channel
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload) => {
-                        console.log("Real-time update received:", payload);
                         fetchNews();
                     })
-                    .subscribe((status) => {
-                        console.log("Subscription status:", status);
-                    });
+                    .subscribe();
 
                 await fetchNews();
-                
                 const form = document.getElementById('post-form');
                 if (form) form.onsubmit = handleNewsSubmission;
 
@@ -269,11 +261,14 @@
             }
 
             newsData.forEach(post => {
+                // Use default image if URL is missing or empty string
+                const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
+
                 const card = document.createElement('div');
                 card.className = 'post-card';
                 card.onclick = () => openModal(post);
                 card.innerHTML = `
-                    <img src="${post.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600'}" alt="News Image">
+                    <img src="${displayImage}" alt="News Image" onerror="this.src='${DEFAULT_IMAGE}'">
                     <div class="post-content">
                         <h3>${post.title}</h3>
                         <p>${post.description ? post.description.substring(0, 100) + '...' : ''}</p>
@@ -340,9 +335,14 @@
         }
 
         function openModal(post) {
+            const displayImage = (post.image_url && post.image_url.trim() !== "") ? post.image_url : DEFAULT_IMAGE;
+            
             document.getElementById('modal-title').innerText = post.title;
             document.getElementById('modal-desc').innerText = post.description;
-            document.getElementById('modal-img').src = post.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600';
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = displayImage;
+            modalImg.onerror = function() { this.src = DEFAULT_IMAGE; };
+            
             document.getElementById('post-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
@@ -366,11 +366,9 @@
 
         function hideAdmin() { document.getElementById('admin-view').style.display = 'none'; }
 
-        // Start initialization when script and DOM are ready
         window.onload = () => {
             let retryCount = 0;
             const maxRetries = 50; 
-            
             const timer = setInterval(() => {
                 retryCount++;
                 if (window.supabase && typeof window.supabase.createClient === 'function') {
@@ -378,7 +376,7 @@
                     init();
                 } else if (retryCount >= maxRetries) {
                     clearInterval(timer);
-                    logError("Supabase initialization timed out. If you see 'Script error', a browser extension or security policy might be blocking the CDN.");
+                    logError("Supabase initialization timed out.");
                 }
             }, 100);
         };
